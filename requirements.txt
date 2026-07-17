@@ -1,10 +1,7 @@
 fastapi
-jinja2
-pathlib
-pydantic
-swisseph
-threading
-timezonefinder
-urllib
 uvicorn[standard]
-zoneinfo
+pydantic
+jinja2
+pytz
+timezonefinder
+pyswisseph

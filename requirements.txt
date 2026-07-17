@@ -1,4 +1,3 @@
-difflib
 fastapi
 jinja2
 pathlib

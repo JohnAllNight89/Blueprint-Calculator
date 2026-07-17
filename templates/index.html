@@ -44,6 +44,39 @@
     .tab-idle { color: #9a91b5; border-color: transparent; }
     .tab-idle:hover { color: #c9c1e0; background: rgba(139, 92, 246, 0.08); }
     input { color-scheme: dark; }
+    .print-title { display: none; }
+
+    /* ---------- Print / Save-as-PDF: light, ink-friendly report ---------- */
+    @media print {
+      body { background: #fff !important; color: #111 !important; font-size: 11px; }
+      header, aside, #tab-bar, #print-btn, #form-error { display: none !important; }
+      main { display: block !important; max-width: 100% !important; padding: 0 !important; }
+      [data-panel] { display: block !important; margin-top: 1rem !important; break-inside: avoid-page; }
+      .print-title {
+        display: block; font-family: Cinzel, serif; font-size: 18px;
+        margin: 1.25rem 0 0.5rem; padding-bottom: 0.25rem;
+        border-bottom: 2px solid #b08d2a; color: #6b5416;
+      }
+      .card-metal, .card-metal-gold {
+        background: #fff !important; border: 1px solid #c9c2da !important;
+        box-shadow: none !important; break-inside: avoid;
+      }
+      .gold-text { background: none !important; -webkit-text-fill-color: initial; color: #8a6d1d !important; }
+      .text-slate-100, .text-slate-200, .text-slate-300 { color: #1e1b2a !important; }
+      .text-slate-400, .text-slate-500 { color: #5a5470 !important; }
+      .text-gold-soft { color: #8a6d1d !important; }
+      .text-violet2-soft { color: #5b3fa8 !important; }
+      .text-emerald-400 { color: #047857 !important; }
+      .bg-charcoal-950\/50, .bg-charcoal-950\/60, .bg-charcoal-950\/40,
+      .bg-charcoal-950\/30, .bg-charcoal-950\/70, .odd\:bg-charcoal-950\/30:nth-child(odd),
+      thead { background: #f4f2fa !important; }
+      .border-charcoal-700, .border-charcoal-700\/40, .border-charcoal-700\/60,
+      .border-charcoal-700\/70, .border-gold\/20, .border-gold\/40,
+      .border-gold\/50, .border-violet2\/40 { border-color: #c9c2da !important; }
+      .overflow-x-auto { overflow: visible !important; }
+      table { min-width: 0 !important; }
+      .animate-pulse { animation: none !important; }
+    }
   </style>
 </head>
 <body class="min-h-screen font-body text-slate-200 antialiased">
@@ -52,9 +85,9 @@
     <div class="mx-auto flex max-w-7xl items-baseline justify-between gap-4">
       <div>
         <h1 class="font-display text-2xl tracking-widest gold-text sm:text-3xl">BLUEPRINT CALCULATOR</h1>
-        <p class="mt-1 text-xs uppercase tracking-[0.3em] text-violet2-soft/70">Esoteric Synthesis Engine · Phase I</p>
+        <p class="mt-1 text-xs uppercase tracking-[0.3em] text-violet2-soft/70">Esoteric Synthesis Engine · Numerology × Astrology × Human Design × Gene Keys</p>
       </div>
-      <span id="engine-status" class="hidden rounded-full border border-gold/40 px-3 py-1 text-xs text-gold-soft sm:inline-block">Numerology Engine · Online</span>
+      <span id="engine-status" class="hidden rounded-full border border-gold/40 px-3 py-1 text-xs text-gold-soft sm:inline-block">Synthesis Engines · Online</span>
     </div>
   </header>
 
@@ -79,14 +112,15 @@
         </div>
         <div>
           <label for="birth_time" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-violet2-soft">Birth Time</label>
-          <input id="birth_time" name="birth_time" type="time"
+          <input id="birth_time" name="birth_time" type="time" value="21:55"
                  class="w-full rounded-lg border border-charcoal-700 bg-charcoal-950/70 px-3 py-2.5 text-sm text-slate-100 outline-none transition focus:border-violet2 focus:ring-2 focus:ring-violet2/30" />
-          <p class="mt-1 text-[11px] text-slate-500">Powers the astrology &amp; Human Design engines (later phases).</p>
+          <p class="mt-1 text-[11px] text-slate-500">Local clock time — DST is resolved automatically from history.</p>
         </div>
         <div>
           <label for="birth_place" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-violet2-soft">Birth Place</label>
-          <input id="birth_place" name="birth_place" type="text" placeholder="City, State / Country"
+          <input id="birth_place" name="birth_place" type="text" placeholder="City, State / Country" value="Atlanta, Georgia, USA"
                  class="w-full rounded-lg border border-charcoal-700 bg-charcoal-950/70 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-violet2 focus:ring-2 focus:ring-violet2/30" />
+          <p class="mt-1 text-[11px] text-slate-500">Resolved offline — major cities or raw "lat, lon" coordinates.</p>
         </div>
 
         <button type="submit" id="calc-btn"
@@ -110,6 +144,18 @@
 
       <!-- Summary -->
       <div id="panel-summary" data-panel class="mt-6 space-y-6">
+        <h2 class="print-title">Soul Blueprint — Summary</h2>
+        <div id="summary-blueprint" class="hidden card-metal-gold rounded-2xl p-6">
+          <header class="flex flex-wrap items-baseline justify-between gap-3">
+            <h3 class="font-display text-lg tracking-wide text-gold-soft">The Soul Blueprint</h3>
+            <button id="print-btn" onclick="window.print()"
+                    class="rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10 print:hidden">
+              ⎙ Save Report / PDF
+            </button>
+          </header>
+          <div id="blueprint-archetypes" class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4"></div>
+          <p id="blueprint-paragraph" class="mt-5 border-t border-gold/20 pt-4 text-sm leading-relaxed text-slate-300"></p>
+        </div>
         <div class="card-metal-gold rounded-2xl p-6">
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Profile</h3>
           <div id="summary-profile" class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
@@ -121,29 +167,58 @@
           <div id="summary-numbers" class="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4"></div>
         </div>
         <div class="card-metal rounded-2xl p-6">
+          <h3 class="font-display text-lg tracking-wide text-gold-soft">Celestial Signature</h3>
+          <div id="summary-celestial" class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <p class="text-sm text-slate-400">Add birth time and place to reveal the sky.</p>
+          </div>
+        </div>
+        <div class="card-metal rounded-2xl p-6">
           <h3 class="font-display text-lg tracking-wide text-gold-soft">System Status</h3>
           <ul class="mt-4 space-y-2 text-sm">
             <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Numerology</span><span class="text-emerald-400">● Active</span></li>
-            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Western Astrology</span><span class="text-slate-500">○ Awaiting Phase 2</span></li>
-            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Vedic Astrology</span><span class="text-slate-500">○ Awaiting Phase 2</span></li>
-            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Human Design</span><span class="text-slate-500">○ Awaiting Phase 3</span></li>
-            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Gene Keys</span><span class="text-slate-500">○ Awaiting Phase 3</span></li>
+            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Western Astrology</span><span id="status-western" class="text-slate-500">○ Awaiting birth time &amp; place</span></li>
+            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Vedic Astrology</span><span id="status-vedic" class="text-slate-500">○ Awaiting birth time &amp; place</span></li>
+            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Human Design</span><span id="status-hd" class="text-slate-500">○ Awaiting birth time &amp; place</span></li>
+            <li class="flex items-center justify-between rounded-lg bg-charcoal-950/50 px-4 py-2.5"><span>Gene Keys</span><span id="status-gk" class="text-slate-500">○ Awaiting birth time &amp; place</span></li>
           </ul>
         </div>
       </div>
 
       <!-- Numerology -->
       <div id="panel-numerology" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Numerology</h2>
         <div id="numerology-cards" class="grid gap-6 md:grid-cols-2">
           <p class="text-sm text-slate-400">Calculate a blueprint to reveal the core numbers.</p>
         </div>
       </div>
 
-      <!-- Placeholder panels -->
-      <div id="panel-genekeys" data-panel class="mt-6 hidden"></div>
-      <div id="panel-humandesign" data-panel class="mt-6 hidden"></div>
-      <div id="panel-vedic" data-panel class="mt-6 hidden"></div>
-      <div id="panel-western" data-panel class="mt-6 hidden"></div>
+      <!-- Western & Vedic Astrology -->
+      <div id="panel-western" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Western Astrology (Tropical)</h2>
+        <div id="western-content" class="space-y-6">
+          <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
+        </div>
+      </div>
+      <div id="panel-vedic" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Vedic Astrology (Sidereal · Lahiri)</h2>
+        <div id="vedic-content" class="space-y-6">
+          <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
+        </div>
+      </div>
+
+      <!-- Human Design & Gene Keys -->
+      <div id="panel-humandesign" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Human Design</h2>
+        <div id="hd-content" class="space-y-6">
+          <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
+        </div>
+      </div>
+      <div id="panel-genekeys" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Gene Keys</h2>
+        <div id="gk-content" class="space-y-6">
+          <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -161,23 +236,6 @@
       { key: "soul_urge",   title: "Soul Urge / Heart's Desire", subtitle: "The inner yearning — the vowels of the birth name." },
       { key: "personality", title: "Personality", subtitle: "The face shown to the world — the consonants of the birth name." },
     ];
-
-    const PLACEHOLDERS = {
-      genekeys:    { glyph: "◈", name: "Gene Keys" },
-      humandesign: { glyph: "▽", name: "Human Design" },
-      vedic:       { glyph: "☽", name: "Vedic Astrology" },
-      western:     { glyph: "☉", name: "Western Astrology" },
-    };
-
-    for (const [id, info] of Object.entries(PLACEHOLDERS)) {
-      document.getElementById(`panel-${id}`).innerHTML = `
-        <div class="card-metal flex min-h-[340px] flex-col items-center justify-center rounded-2xl p-10 text-center">
-          <div class="text-5xl text-violet2-soft/60">${info.glyph}</div>
-          <h3 class="mt-5 font-display text-xl tracking-wide text-gold-soft">${info.name}</h3>
-          <p class="mt-3 animate-pulse text-sm tracking-widest text-violet2-soft">CALCULATION ENGINE LOADING...</p>
-          <p class="mt-2 max-w-sm text-xs text-slate-500">This system comes online in a later phase of the Blueprint Calculator.</p>
-        </div>`;
-    }
 
     // ---------- Tabs ----------
     const tabButtons = document.querySelectorAll("#tab-bar [data-tab]");
@@ -253,6 +311,300 @@
       document.getElementById("engine-status").classList.remove("hidden");
     }
 
+    // ---------- Astrology rendering ----------
+    const RETRO = `<span class="text-gold-soft" title="Retrograde">℞</span>`;
+    const th = (label, align = "left") =>
+      `<th class="px-4 py-2.5 text-${align} text-[11px] font-semibold uppercase tracking-wider text-slate-500">${label}</th>`;
+    const td = (content, extra = "") =>
+      `<td class="px-4 py-2.5 ${extra}">${content}</td>`;
+
+    function tableShell(title, subtitle, headRow, bodyRows) {
+      return `
+        <div class="card-metal rounded-2xl p-6">
+          <header class="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 class="font-display text-lg tracking-wide text-gold-soft">${title}</h3>
+            <p class="text-xs text-slate-400">${subtitle}</p>
+          </header>
+          <div class="mt-4 overflow-x-auto rounded-xl border border-charcoal-700/60">
+            <table class="w-full min-w-[560px] text-sm">
+              <thead class="bg-charcoal-950/70"><tr>${headRow}</tr></thead>
+              <tbody class="divide-y divide-charcoal-700/40">${bodyRows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    function angleCard(label, data) {
+      return `
+        <div class="card-metal-gold rounded-2xl p-5 text-center">
+          <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${label}</p>
+          <div class="mt-2 font-display text-3xl gold-text">${data.sign_glyph} ${data.sign}</div>
+          <p class="mt-2 font-mono text-sm text-slate-300">${data.position}</p>
+          <p class="mt-1 font-mono text-[11px] text-slate-500">ecliptic ${data.longitude.toFixed(4)}°</p>
+        </div>`;
+    }
+
+    function contextBanner(astro) {
+      return `
+        <div class="card-metal rounded-2xl px-6 py-4">
+          <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-xs text-slate-400">
+            <span><span class="text-slate-500">Place</span> <span class="text-slate-200">${astro.location.resolved}</span></span>
+            <span class="font-mono">${astro.location.latitude.toFixed(4)}°, ${astro.location.longitude.toFixed(4)}°</span>
+            <span><span class="text-slate-500">Local</span> <span class="text-slate-200">${astro.time.local}</span> <span class="text-violet2-soft">${astro.time.utc_offset}</span></span>
+            <span><span class="text-slate-500">UTC</span> <span class="text-slate-200">${astro.time.utc}</span></span>
+            <span><span class="text-slate-500">TZ</span> <span class="text-slate-200">${astro.location.timezone}</span></span>
+          </div>
+        </div>`;
+    }
+
+    function renderWestern(astro) {
+      const container = document.getElementById("western-content");
+      if (!astro.available) {
+        container.innerHTML = `<div class="card-metal rounded-2xl p-8 text-center text-sm text-slate-400">${astro.reason}</div>`;
+        return;
+      }
+      const western = astro.western;
+      const planetRows = western.planets.map((planet) => `
+        <tr class="odd:bg-charcoal-950/30">
+          ${td(`<span class="mr-2 text-violet2-soft">${planet.glyph}</span><span class="font-medium text-slate-100">${planet.name}</span>`)}
+          ${td(`${planet.sign_glyph} ${planet.sign}`)}
+          ${td(`<span class="font-mono text-slate-200">${planet.position.replace(" " + planet.sign, "")}</span>`)}
+          ${td(`<span class="font-mono text-slate-400">${planet.longitude.toFixed(4)}°</span>`)}
+          ${td(planet.retrograde ? RETRO : `<span class="text-slate-500">D</span>`, "text-center")}
+        </tr>`).join("");
+
+      const houseRows = western.houses.map((house) => `
+        <tr class="odd:bg-charcoal-950/30">
+          ${td(`<span class="font-medium text-slate-100">House ${house.house}</span>`)}
+          ${td(`${house.sign_glyph} ${house.sign}`)}
+          ${td(`<span class="font-mono text-slate-200">${house.position.replace(" " + house.sign, "")}</span>`)}
+          ${td(`<span class="font-mono text-slate-400">${house.longitude.toFixed(4)}°</span>`)}
+        </tr>`).join("");
+
+      container.innerHTML =
+        contextBanner(astro) +
+        `<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+           ${angleCard("Ascendant", western.angles.ascendant)}
+           ${angleCard("Midheaven (MC)", western.angles.midheaven)}
+           ${angleCard("Descendant", western.angles.descendant)}
+           ${angleCard("Imum Coeli (IC)", western.angles.imum_coeli)}
+         </div>` +
+        tableShell("Planetary Positions", "Tropical zodiac · Swiss Ephemeris",
+          th("Body") + th("Sign") + th("Position") + th("Longitude") + th("Motion", "center"), planetRows) +
+        tableShell("House Cusps", "Placidus system",
+          th("House") + th("Sign") + th("Cusp") + th("Longitude"), houseRows);
+    }
+
+    function renderVedic(astro) {
+      const container = document.getElementById("vedic-content");
+      if (!astro.available) {
+        container.innerHTML = `<div class="card-metal rounded-2xl p-8 text-center text-sm text-slate-400">${astro.reason}</div>`;
+        return;
+      }
+      const vedic = astro.vedic;
+      const grahaRows = vedic.grahas.map((graha) => `
+        <tr class="odd:bg-charcoal-950/30">
+          ${td(`<span class="mr-2 text-violet2-soft">${graha.glyph}</span><span class="font-medium text-slate-100">${graha.name}</span>`)}
+          ${td(`${graha.rashi} <span class="text-slate-500">(${graha.sign})</span>`)}
+          ${td(`<span class="font-mono text-slate-200">${graha.position.replace(" " + graha.rashi, "")}</span>`)}
+          ${td(`${graha.nakshatra} <span class="text-slate-500">· ${graha.nakshatra_lord}</span>`)}
+          ${td(`<span class="font-mono text-slate-300">${graha.pada}</span>`, "text-center")}
+          ${td(graha.retrograde ? RETRO : `<span class="text-slate-500">D</span>`, "text-center")}
+        </tr>`).join("");
+
+      const lagna = vedic.lagna;
+      container.innerHTML =
+        contextBanner(astro) +
+        `<div class="grid gap-4 sm:grid-cols-2">
+           <div class="card-metal-gold rounded-2xl p-5 text-center">
+             <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">Lagna (Ascendant)</p>
+             <div class="mt-2 font-display text-3xl gold-text">${lagna.rashi}</div>
+             <p class="mt-2 font-mono text-sm text-slate-300">${lagna.position}</p>
+             <p class="mt-1 text-xs text-slate-400">${lagna.nakshatra} · Pada ${lagna.pada}</p>
+           </div>
+           <div class="card-metal rounded-2xl p-5 text-center">
+             <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">Ayanamsa</p>
+             <div class="mt-2 font-display text-3xl text-slate-100">${vedic.ayanamsa_dms}</div>
+             <p class="mt-2 text-xs text-slate-400">${vedic.ayanamsa_name} · sidereal = tropical − ayanamsa</p>
+           </div>
+         </div>` +
+        tableShell("Graha Positions", "Sidereal zodiac · Lahiri Ayanamsa",
+          th("Graha") + th("Rashi") + th("Position") + th("Nakshatra") + th("Pada", "center") + th("Motion", "center"), grahaRows);
+    }
+
+    const HD_CENTER_ORDER = ["Head", "Ajna", "Throat", "G", "Heart", "Sacral", "Spleen", "Solar Plexus", "Root"];
+
+    function setStatus(id, active) {
+      const status = document.getElementById(id);
+      status.innerHTML = active ? "● Active" : "○ Awaiting birth time &amp; place";
+      status.className = active ? "text-emerald-400" : "text-slate-500";
+    }
+
+    function statCard(label, value, sub, gold = false) {
+      return `
+        <div class="${gold ? "card-metal-gold" : "card-metal"} rounded-2xl p-5 text-center">
+          <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${label}</p>
+          <div class="mt-2 font-display text-2xl gold-text">${value}</div>
+          <p class="mt-1.5 text-xs text-slate-400">${sub}</p>
+        </div>`;
+    }
+
+    function activationTable(title, subtitle, activations, accent) {
+      const rows = activations.map((entry) => `
+        <tr class="odd:bg-charcoal-950/30">
+          ${td(`<span class="mr-2 ${accent}">${entry.glyph}</span><span class="font-medium text-slate-100">${entry.body}</span>`)}
+          ${td(`<span class="font-mono text-base ${accent}">${entry.notation}</span>`)}
+          ${td(`<span class="text-slate-300">${entry.gate_name}</span>`)}
+          ${td(`<span class="font-mono text-[11px] text-slate-500">${entry.zodiac}</span>`)}
+        </tr>`).join("");
+      return tableShell(title, subtitle,
+        th("Body") + th("Gate.Line") + th("Hexagram") + th("Zodiac"), rows);
+    }
+
+    function renderHumanDesign(astro) {
+      const container = document.getElementById("hd-content");
+      if (!astro.available) {
+        container.innerHTML = `<div class="card-metal rounded-2xl p-8 text-center text-sm text-slate-400">${astro.reason}</div>`;
+        setStatus("status-hd", false);
+        return;
+      }
+      const hd = astro.human_design;
+
+      const centers = HD_CENTER_ORDER.map((center) => {
+        const defined = hd.defined_centers.includes(center);
+        return `
+          <div class="rounded-xl border px-3 py-3 text-center ${defined
+            ? "border-gold/50 bg-violet2/15 text-slate-100"
+            : "border-charcoal-700/70 bg-charcoal-950/40 text-slate-500"}">
+            <p class="text-xs font-medium">${center}</p>
+            <p class="mt-0.5 text-[10px] uppercase tracking-wider ${defined ? "text-gold-soft" : "text-slate-600"}">${defined ? "Defined" : "Open"}</p>
+          </div>`;
+      }).join("");
+
+      const channels = hd.channels.length
+        ? hd.channels.map((channel) => `
+            <span class="rounded-full border border-violet2/40 bg-violet2/10 px-3 py-1.5 text-xs text-slate-200">
+              <span class="font-mono text-violet2-soft">${channel.label}</span>
+              <span class="text-slate-400"> · ${channel.centers[0]} ↔ ${channel.centers[1]}</span>
+            </span>`).join("")
+        : `<span class="text-sm text-slate-500">No fully defined channels.</span>`;
+
+      container.innerHTML =
+        contextBanner(astro) +
+        `<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+           ${statCard("Type", hd.type, `Strategy: ${hd.strategy}`, true)}
+           ${statCard("Authority", hd.authority.split(" (")[0], hd.authority.includes("(") ? hd.authority.split(" (")[1].replace(")", "") : "inner compass")}
+           ${statCard("Profile", hd.profile, hd.profile_label)}
+           ${statCard("Definition", hd.definition.replace(" Definition", ""), `Signature: ${hd.signature} · Not-self: ${hd.not_self}`)}
+         </div>` +
+        `<div class="card-metal rounded-2xl p-6">
+           <h3 class="font-display text-lg tracking-wide text-gold-soft">Centers</h3>
+           <div class="mt-4 grid grid-cols-3 gap-3">${centers}</div>
+           <h3 class="mt-6 font-display text-lg tracking-wide text-gold-soft">Defined Channels</h3>
+           <div class="mt-3 flex flex-wrap gap-2">${channels}</div>
+           <p class="mt-4 text-xs text-slate-500">Design calculated at ${hd.design.moment_utc} UTC — the Sun exactly ${hd.design.solar_arc}° of solar longitude before birth.</p>
+         </div>` +
+        `<div class="grid gap-6 xl:grid-cols-2">
+           ${activationTable("Personality", "Conscious · at birth", hd.personality.activations, "text-gold-soft")}
+           ${activationTable("Design", `Unconscious · ${hd.design.moment_utc} UTC`, hd.design.activations, "text-violet2-soft")}
+         </div>`;
+      setStatus("status-hd", true);
+    }
+
+    function renderGeneKeys(astro) {
+      const container = document.getElementById("gk-content");
+      if (!astro.available) {
+        container.innerHTML = `<div class="card-metal rounded-2xl p-8 text-center text-sm text-slate-400">${astro.reason}</div>`;
+        setStatus("status-gk", false);
+        return;
+      }
+      const gk = astro.gene_keys;
+
+      const spheres = gk.activation_sequence.map((sphere) => `
+        <div class="card-metal-gold rounded-2xl p-6">
+          <div class="flex items-baseline justify-between gap-3">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${sphere.sphere}</p>
+            <span class="text-[11px] text-slate-500">${sphere.source}</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-3">
+            <span class="font-display text-4xl gold-text">${sphere.notation}</span>
+            <span class="text-sm text-slate-300">${sphere.name}</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-400">${sphere.meaning}</p>
+          <div class="mt-4 grid grid-cols-3 gap-2 border-t border-gold/20 pt-3 text-center text-xs">
+            <div><p class="text-[10px] uppercase tracking-wider text-slate-500">Shadow</p><p class="mt-1 text-slate-400">${sphere.shadow}</p></div>
+            <div><p class="text-[10px] uppercase tracking-wider text-violet2-soft">Gift</p><p class="mt-1 text-slate-200">${sphere.gift}</p></div>
+            <div><p class="text-[10px] uppercase tracking-wider text-gold-soft">Siddhi</p><p class="mt-1 gold-text font-medium">${sphere.siddhi}</p></div>
+          </div>
+        </div>`).join("");
+
+      const keyRows = gk.all_keys.map((key) => `
+        <tr class="odd:bg-charcoal-950/30">
+          ${td(`<span class="font-mono text-base text-gold-soft">${key.gene_key}</span>`)}
+          ${td(`<span class="text-slate-200">${key.name}</span>`)}
+          ${td(`<span class="text-slate-400">${key.shadow}</span>`)}
+          ${td(`<span class="text-slate-200">${key.gift}</span>`)}
+          ${td(`<span class="text-gold-soft">${key.siddhi}</span>`)}
+          ${td(`<span class="text-[11px] text-slate-500">${key.sources.join(", ")}</span>`)}
+        </tr>`).join("");
+
+      container.innerHTML =
+        contextBanner(astro) +
+        `<div>
+           <h3 class="mb-4 font-display text-lg tracking-wide text-gold-soft">Activation Sequence</h3>
+           <div class="grid gap-4 xl:grid-cols-2">${spheres}</div>
+         </div>` +
+        tableShell("All Activated Gene Keys", "Every gate in your bodygraph, through the Gene Keys lens",
+          th("Key") + th("Name") + th("Shadow") + th("Gift") + th("Siddhi") + th("Activated By"), keyRows);
+      setStatus("status-gk", true);
+    }
+
+    function renderBlueprint(data) {
+      const card = document.getElementById("summary-blueprint");
+      if (!data.synthesis) {
+        card.classList.add("hidden");
+        return;
+      }
+      card.classList.remove("hidden");
+      document.getElementById("blueprint-paragraph").textContent = data.synthesis.paragraph;
+      document.getElementById("blueprint-archetypes").innerHTML = data.synthesis.archetypes.map((entry) => `
+        <div class="rounded-xl bg-charcoal-950/60 border border-charcoal-700/60 p-3 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500">${entry.label}</p>
+          <p class="mt-1 font-display text-base gold-text">${entry.value}</p>
+          <p class="mt-0.5 text-[10px] text-violet2-soft">${entry.detail}</p>
+        </div>`).join("");
+    }
+
+    function renderCelestial(astro) {
+      const container = document.getElementById("summary-celestial");
+      if (!astro.available) {
+        container.innerHTML = `<p class="text-sm text-slate-400">${astro.reason}</p>`;
+        document.getElementById("status-western").innerHTML = "○ Awaiting birth time &amp; place";
+        document.getElementById("status-vedic").innerHTML = "○ Awaiting birth time &amp; place";
+        document.getElementById("status-western").className = "text-slate-500";
+        document.getElementById("status-vedic").className = "text-slate-500";
+        return;
+      }
+      const bodies = Object.fromEntries(astro.western.planets.map((planet) => [planet.name, planet]));
+      const moonVedic = astro.vedic.grahas.find((graha) => graha.name === "Moon");
+      const tile = (label, main, sub) => `
+        <div class="rounded-xl card-metal p-4 text-center">
+          <p class="text-[11px] uppercase tracking-wider text-slate-500">${label}</p>
+          <div class="mt-1.5 font-display text-xl gold-text">${main}</div>
+          <p class="mt-1 text-[11px] text-violet2-soft">${sub}</p>
+        </div>`;
+      container.innerHTML =
+        tile("Sun", `${bodies.Sun.sign_glyph} ${bodies.Sun.sign}`, bodies.Sun.position) +
+        tile("Moon", `${bodies.Moon.sign_glyph} ${bodies.Moon.sign}`, bodies.Moon.position) +
+        tile("Ascendant", `${astro.western.angles.ascendant.sign_glyph} ${astro.western.angles.ascendant.sign}`, astro.western.angles.ascendant.position) +
+        tile("Moon Nakshatra", moonVedic.nakshatra, `${moonVedic.rashi} · Pada ${moonVedic.pada}`);
+      for (const id of ["status-western", "status-vedic"]) {
+        const status = document.getElementById(id);
+        status.innerHTML = "● Active";
+        status.className = "text-emerald-400";
+      }
+    }
+
     // ---------- API wiring ----------
     const form = document.getElementById("profile-form");
     const errorBox = document.getElementById("form-error");
@@ -280,6 +632,12 @@
         const data = await response.json();
         renderNumerology(data.numerology);
         renderSummary(data.profile, data.numerology);
+        renderWestern(data.astrology);
+        renderVedic(data.astrology);
+        renderCelestial(data.astrology);
+        renderHumanDesign(data.astrology);
+        renderGeneKeys(data.astrology);
+        renderBlueprint(data);
       } catch (error) {
         errorBox.textContent = `Calculation failed: ${error.message}`;
         errorBox.classList.remove("hidden");

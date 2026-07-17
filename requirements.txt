@@ -1,3 +1,5 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
+pyswisseph>=2.10.3
+timezonefinder>=6.5
 pytest>=8.0

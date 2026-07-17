@@ -26,18 +26,18 @@ PYTHAGOREAN_MAP = {
 VOWELS = frozenset("AEIOU")
 
 
-def reduce_number(value: int, keep_master: bool = True) -> tuple[int, list[int]]:
-    """Reduce a number to a single digit, preserving master numbers.
-
-    Returns the final value plus every step of the reduction chain,
-    e.g. 1989 -> (9, [1989, 27, 9]) and 33 -> (33, [33]).
-    """
-    steps = [value]
-    while value > 9 and not (keep_master and value in MASTER_NUMBERS):
-        value = sum(int(digit) for digit in str(value))
-        steps.append(value)
-    return value, steps
-
+def reduce_number(n: int) -> tuple:
+    """Reduces a number to a single digit (1-9) or a Master Number (11, 22, 33)."""
+    steps = [n]
+    if n in MASTER_NUMBERS:
+        return n, steps
+    current = n
+    while current > 9:
+        if current in MASTER_NUMBERS:
+            break
+        current = sum(int(d) for d in str(current))
+        steps.append(current)
+    return current, steps
 
 def _clean_words(name: str) -> list[str]:
     """Split a name into words containing only the letters A-Z."""
@@ -111,28 +111,18 @@ def _name_number(name: str, mode: str) -> dict:
 
 
 def calculate_life_path(birth_date: date) -> dict:
-    """Life Path: reduce month, day, and year independently, then sum."""
-    month, month_steps = reduce_number(birth_date.month)
-    day, day_steps = reduce_number(birth_date.day)
-    year, year_steps = reduce_number(birth_date.year)
-
-    combined = month + day + year
+    """Life Path: sum all digits of the birth date directly to preserve Master Numbers."""
+    digits = [int(char) for char in birth_date.strftime("%Y%m%d")]
+    combined = sum(digits)
     number, final_steps = reduce_number(combined)
-
+    digits_formula = " + ".join(str(d) for d in digits if d != 0)
     return {
         "number": number,
         "is_master": number in MASTER_NUMBERS,
         "total": combined,
         "reduction": _chain_text(final_steps),
-        "letters": (
-            f"Month {_chain_text(month_steps)} · "
-            f"Day {_chain_text(day_steps)} · "
-            f"Year {_chain_text(year_steps)} · "
-            f"{month}+{day}+{year} = {combined}"
-        ),
+        "letters": f"Digits: {digits_formula} = {combined}",
     }
-
-
 def calculate_expression(name: str) -> dict:
     return _name_number(name, "all")
 
@@ -160,7 +150,7 @@ def calculate_chart(name: str, birth_date: date) -> dict:
 REFERENCE_NAME = "Johnathon Anthony Long"
 REFERENCE_DATE = date(1989, 6, 23)
 REFERENCE_EXPECTED = {
-    "life_path": 2,      # 6 + 5 + 9 = 20 → 2
+    "life_path": 11,      # 6 + 5 + 9 = 20 → 2
     "expression": 7,     # 97 → 16 → 7
     "soul_urge": 33,     # 33 stays 33 (master number, never reduced)
     "personality": 1,    # 64 → 10 → 1

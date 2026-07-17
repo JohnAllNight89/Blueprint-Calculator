@@ -1,5 +1,12 @@
-fastapi>=0.110
-uvicorn[standard]>=0.29
-pyswisseph>=2.10.3
-timezonefinder>=6.5
-pytest>=8.0
+__future__
+difflib
+fastapi
+jinja2
+pathlib
+pydantic
+swisseph
+threading
+timezonefinder
+urllib
+uvicorn[standard]
+zoneinfo

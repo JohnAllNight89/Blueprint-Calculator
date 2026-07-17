@@ -140,6 +140,7 @@
         <button data-tab="numerology" class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Numerology</button>
         <button data-tab="vedic" class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Vedic Astrology</button>
         <button data-tab="western" class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Western Astrology</button>
+<button data-tab="all" class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">All Aspects</button>
       </nav>
 
       <!-- Summary -->
@@ -213,7 +214,8 @@
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
       </div>
-      <div id="panel-genekeys" data-panel class="mt-6 hidden">
+      <div id="panel-all" data-panel class="mt-6 hidden space-y-8"></div>
+<div id="panel-genekeys" data-panel class="mt-6 hidden">
         <h2 class="print-title">Gene Keys</h2>
         <div id="gk-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
@@ -248,7 +250,10 @@
         button.classList.add("tab-active");
         button.classList.remove("tab-idle");
         document.querySelectorAll("[data-panel]").forEach((panel) => panel.classList.add("hidden"));
-        document.getElementById(`panel-${button.dataset.tab}`).classList.remove("hidden");
+        if (button.dataset.tab === "all") {
+             updateAllAspectsPanel();
+           }
+           document.getElementById(`panel-${button.dataset.tab}`).classList.remove("hidden");
       });
     });
 
@@ -259,7 +264,149 @@
         : "";
     }
 
-    function renderNumerology(numerologyData) {
+    function updateAllAspectsPanel() {
+       const allPanel = document.getElementById("panel-all");
+       if (!allPanel) return;
+       allPanel.innerHTML = "";
+       
+       const aspects = [
+         { id: "numerology", name: "Numerology" },
+         { id: "western", name: "Western Astrology" },
+         { id: "vedic", name: "Vedic Astrology" },
+         { id: "humandesign", name: "Human Design" },
+         { id: "genekeys", name: "Gene Keys" }
+       ];
+
+       // 1. Create a clean, copyable code block at the top
+       const copyContainer = document.createElement("div");
+       copyContainer.className = "border border-purple-500/30 bg-charcoal-950/80 rounded-2xl p-6 mb-8 relative overflow-hidden";
+       copyContainer.innerHTML = `
+         <div class="flex items-center justify-between border-b border-charcoal-700/80 pb-4 mb-4">
+           <div>
+             <h2 class="text-xl font-bold font-display text-gold-soft tracking-wide">Consolidated Soul Blueprint Report</h2>
+             <p class="text-xs text-charcoal-400 mt-1">Formatted clean markdown — copy and paste directly into your client blueprint files.</p>
+           </div>
+           <button id="copy-all-btn" class="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all rounded-lg px-4 py-2 text-sm font-semibold active:scale-95 transition">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+             </svg>
+             <span id="copy-btn-text">Copy Report</span>
+           </button>
+         </div>
+         <div class="relative bg-black/60 border border-charcoal-800 rounded-xl p-4">
+           <pre id="all-aspects-raw-text" class="overflow-auto max-h-96 font-mono text-xs text-gray-300 whitespace-pre-wrap select-all focus:outline-none leading-relaxed" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;"></pre>
+         </div>
+       `;
+       allPanel.appendChild(copyContainer);
+
+       let fullMarkdown = "# COMPREHENSIVE SOUL BLUEPRINT REPORT\n\n";
+
+       // 2. Build out markdown content using explicit concatenation to avoid cross-language syntax bugs
+       aspects.forEach(aspect => {
+         const original = document.getElementById("panel-" + aspect.id);
+         if (original) {
+           fullMarkdown += "## " + aspect.name.toUpperCase() + "\n\n";
+           let aspectMarkdown = "";
+           
+           // Extract tables/grids
+           const rows = original.querySelectorAll("tr");
+           if (rows.length > 0) {
+             rows.forEach(row => {
+               const cells = Array.from(row.querySelectorAll("td, th")).map(c => c.innerText.trim().replace(/\s+/g, " "));
+               if (cells.length >= 2) {
+                 aspectMarkdown += "* **" + cells[0] + "**: " + cells.slice(1).join(" - ") + "\n";
+               } else if (cells.length === 1 && cells[0]) {
+                 aspectMarkdown += "* " + cells[0] + "\n";
+               }
+             });
+             aspectMarkdown += "\n";
+           }
+
+           // Extract narrative text elements
+           const contents = original.querySelectorAll("p, li, blockquote");
+           let addedParagraph = false;
+           contents.forEach(el => {
+             if (el.closest("table")) return;
+             const text = el.innerText.trim();
+             if (!text || text.toLowerCase().includes("verification mode")) return;
+             
+             if (el.tagName === "LI") {
+               aspectMarkdown += "* " + text + "\n";
+               addedParagraph = true;
+             } else if (el.tagName === "BLOCKQUOTE") {
+               aspectMarkdown += "> " + text + "\n\n";
+               addedParagraph = true;
+             } else {
+               aspectMarkdown += text + "\n\n";
+               addedParagraph = true;
+             }
+           });
+
+           if (addedParagraph) {
+             aspectMarkdown += "\n";
+           }
+
+           if (aspectMarkdown.trim()) {
+             fullMarkdown += aspectMarkdown.trim() + "\n\n---\n\n";
+           } else {
+             const fallbackText = original.innerText
+               .replace(/Verification Mode/g, "")
+               .replace(/\n\s*\n/g, "\n")
+               .trim();
+             fullMarkdown += fallbackText + "\n\n---\n\n";
+           }
+
+           // 3. Render the physical component cards below the copy block
+           const section = document.createElement("div");
+           section.className = "border border-charcoal-700/60 bg-charcoal-900/40 rounded-2xl p-6 mb-8";
+           
+           const header = document.createElement("div");
+           header.className = "flex items-center justify-between border-b border-charcoal-700/80 pb-4 mb-6";
+           header.innerHTML = `
+             <h2 class="text-xl font-bold font-display text-gold-soft tracking-wide">${aspect.name}</h2>
+             <span class="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-300 border border-violet-500/20">Verification Mode</span>
+           `;
+           
+           const contentClone = original.cloneNode(true);
+           contentClone.removeAttribute("id");
+           contentClone.classList.remove("hidden", "mt-6");
+           contentClone.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
+           
+           section.appendChild(header);
+           section.appendChild(contentClone);
+           allPanel.appendChild(section);
+         }
+       });
+
+       fullMarkdown = fullMarkdown.trim().replace(/\n+---\n*$/, "");
+
+       const codeBlock = document.getElementById("all-aspects-raw-text");
+       if (codeBlock) {
+         codeBlock.textContent = fullMarkdown;
+       }
+
+       const copyBtn = document.getElementById("copy-all-btn");
+       if (copyBtn) {
+         copyBtn.addEventListener("click", () => {
+           navigator.clipboard.writeText(fullMarkdown).then(() => {
+             const btnText = document.getElementById("copy-btn-text");
+             if (btnText) {
+               btnText.textContent = "Copied!";
+               copyBtn.classList.remove("bg-purple-500/20", "text-purple-300", "border-purple-500/30");
+               copyBtn.classList.add("bg-emerald-500/20", "text-emerald-300", "border-emerald-500/30");
+               
+               setTimeout(() => {
+                 btnText.textContent = "Copy Report";
+                 copyBtn.classList.remove("bg-emerald-500/20", "text-emerald-300", "border-emerald-500/30");
+                 copyBtn.classList.add("bg-purple-500/20", "text-purple-300", "border-purple-500/30");
+               }, 2000);
+             }
+           });
+         });
+       }
+     }
+
+     function renderNumerology(numerologyData) {
       const cards = CORE_NUMBERS.map(({ key, title, subtitle }) => {
         const result = numerologyData[key];
         const archetype = ARCHETYPES[result.number] || "";
@@ -638,6 +785,10 @@
         renderHumanDesign(data.astrology);
         renderGeneKeys(data.astrology);
         renderBlueprint(data);
+         const activeTab = document.querySelector("#tab-bar .tab-active");
+         if (activeTab && activeTab.dataset.tab === "all") {
+           updateAllAspectsPanel();
+         }
       } catch (error) {
         errorBox.textContent = `Calculation failed: ${error.message}`;
         errorBox.classList.remove("hidden");

@@ -22,7 +22,28 @@ from engines import (
 BASE_DIR = Path(__file__).resolve().parent
 INDEX_PAGE = BASE_DIR / "templates" / "index.html"
 
-app = FastAPI(title="Blueprint Calculator", version="0.2.0")
+
+import os
+import secrets
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+security = HTTPBasic()
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "change-this-password-locally")
+
+def authenticate_user(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, ADMIN_USER)
+    correct_password = secrets.compare_digest(credentials.password, ADMIN_PASS)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access Denied: The Unified Spirit Secure Node",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+app = FastAPI(title="Blueprint Calculator", version="0.2.0", dependencies=[Depends(authenticate_user)])
 
 
 class BirthProfile(BaseModel):

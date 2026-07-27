@@ -76,6 +76,10 @@
       table { min-width: 0 !important; }
       .animate-pulse { animation: none !important; }
     }
+    [data-did] { cursor: pointer; }
+    tr[data-did]:hover > td { background: rgba(139,92,246,0.07) !important; }
+    [data-did].rounded-xl:hover, [data-did].rounded-2xl:hover { opacity:.93; }
+    span[data-did]:hover { opacity:.85; }
   </style>
 </head>
 <body class="min-h-screen font-body text-slate-200 antialiased">
@@ -316,8 +320,9 @@
     }
 
     function angleCard(label, data) {
+      const dAttr = _da({type:"angle", label, sign:data.sign, sign_glyph:data.sign_glyph, position:data.position, longitude:data.longitude, _title:`${data.sign_glyph} ${data.sign}`, _subtitle:label});
       return `
-        <div class="card-metal-gold rounded-2xl p-5 text-center">
+        <div ${dAttr} class="card-metal-gold rounded-2xl p-5 text-center">
           <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${label}</p>
           <div class="mt-2 font-display text-3xl gold-text">${data.sign_glyph} ${data.sign}</div>
           <p class="mt-2 font-mono text-sm text-slate-300">${data.position}</p>
@@ -400,14 +405,16 @@
         </div>`;
     }
 
-    function numSmall(label, n, note = "") {
+    function numSmall(label, n, note = "", detailObj = null) {
       const isMaster = n && [11, 22, 33].includes(n.number !== undefined ? n.number : n);
       const val = n && n.number !== undefined ? n.number : n;
+      const dAttr = detailObj ? _da(detailObj) : "";
       return `
-        <div class="rounded-xl ${isMaster ? "card-metal-gold" : "card-metal"} p-4 text-center">
+        <div ${dAttr} class="rounded-xl ${isMaster ? "card-metal-gold" : "card-metal"} p-4 text-center">
           <p class="text-[10px] uppercase tracking-wider text-slate-500">${label}</p>
           <div class="mt-1 font-display text-3xl gold-text">${val ?? "—"}</div>
           ${note ? `<p class="mt-0.5 text-[10px] text-violet2-soft">${note}</p>` : ""}
+          ${detailObj ? `<p class="mt-1 text-[9px] text-slate-600 uppercase tracking-wider">↑ tap</p>` : ""}
         </div>`;
     }
 
@@ -469,9 +476,9 @@
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Birth-Date Pillars</h3>
           <p class="mt-1 text-xs text-slate-400">Encoded directly in the birth date — attitude, talent, and generational overlay.</p>
           <div class="mt-4 grid grid-cols-3 gap-4">
-            ${numSmall("Attitude", d.attitude, "Month + Day")}
-            ${numSmall("Birthday", d.birthday, "Day of birth")}
-            ${numSmall("Generation", d.generation, "Birth year")}
+            ${numSmall("Attitude", d.attitude, "Month + Day", {type:"numerology_extra",label:"Attitude Number",number:d.attitude,note:"First impression · month + day",_title:"Attitude",_subtitle:"Surface manner & first impression"})}
+            ${numSmall("Birthday", d.birthday, "Day of birth", {type:"numerology_extra",label:"Birthday Number",number:d.birthday,note:"Special talent · day of birth",_title:"Birthday",_subtitle:"Special talent this soul carries"})}
+            ${numSmall("Generation", d.generation, "Birth year", {type:"numerology_extra",label:"Generation Number",number:d.generation,note:"Generational overlay · birth year",_title:"Generation",_subtitle:"Collective generational frequency"})}
           </div>
         </div>`;
 
@@ -480,9 +487,9 @@
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Derived Numbers</h3>
           <p class="mt-1 text-xs text-slate-400">Computed from the core numbers — what you grow into and how you carry yourself.</p>
           <div class="mt-4 grid grid-cols-3 gap-4">
-            ${numSmall("Maturity", d.maturity, "Expression + Life Path")}
-            ${numSmall("Balance", d.balance, "First initials")}
-            ${numSmall("Subconscious Self", d.subconscious_self, "9 − karmic lessons")}
+            ${numSmall("Maturity", d.maturity, "Expression + Life Path", {type:"numerology_extra",label:"Maturity Number",number:d.maturity,note:"Expression + Life Path",_title:"Maturity",_subtitle:"The number you grow into after midlife"})}
+            ${numSmall("Balance", d.balance, "First initials", {type:"numerology_extra",label:"Balance Number",number:d.balance,note:"First initials of each name",_title:"Balance",_subtitle:"How you handle emotional stress"})}
+            ${numSmall("Subconscious Self", d.subconscious_self, "9 − karmic lessons", {type:"numerology_extra",label:"Subconscious Self",number:d.subconscious_self,note:"9 − missing numbers",_title:"Subconscious Self",_subtitle:"Automatic response under pressure"})}
           </div>
         </div>`;
 
@@ -501,14 +508,14 @@
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Active Timing</h3>
           <p class="mt-1 text-xs text-slate-400">The energetic frequency of the current year, month, and day.</p>
           <div class="mt-4 grid grid-cols-3 gap-4">
-            ${numSmall("Personal Year", d.personal_year, PY_THEMES[d.personal_year] || "")}
-            ${numSmall("Personal Month", d.personal_month, "")}
-            ${numSmall("Personal Day", d.personal_day, "")}
+            ${numSmall("Personal Year", d.personal_year, PY_THEMES[d.personal_year] || "", {type:"numerology_extra",label:"Personal Year",number:d.personal_year,note:PY_THEMES[d.personal_year]||"",_title:"Personal Year",_subtitle:"Active yearly vibration"})}
+            ${numSmall("Personal Month", d.personal_month, "", {type:"numerology_extra",label:"Personal Month",number:d.personal_month,note:"Monthly vibration",_title:"Personal Month",_subtitle:"Monthly energetic frequency"})}
+            ${numSmall("Personal Day", d.personal_day, "", {type:"numerology_extra",label:"Personal Day",number:d.personal_day,note:"Daily vibration",_title:"Personal Day",_subtitle:"Daily energetic frequency"})}
           </div>
         </div>`;
 
       const mkCycleGrid = (label, arr) => arr.map((n, i) =>
-        numSmall(`${label} ${i + 1}`, n, "")).join("");
+        numSmall(`${label} ${i + 1}`, n, "", {type:"numerology_extra",label:`${label} ${i+1}`,number:n,note:label+" cycle",_title:`${label} ${i+1}`,_subtitle:"Life cycle number"})).join("");
 
       const cyclesSection = `
         <div class="card-metal rounded-2xl p-6">
@@ -617,7 +624,7 @@
       }
       const western = astro.western;
       const planetRows = western.planets.map((planet) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"planet",glyph:planet.glyph,name:planet.name,sign:planet.sign,sign_glyph:planet.sign_glyph,position:planet.position,longitude:planet.longitude,retrograde:planet.retrograde,_title:`${planet.name} in ${planet.sign}`,_subtitle:"Western · Tropical Astrology"})}>
           ${td(`<span class="mr-2 text-violet2-soft">${planet.glyph}</span><span class="font-medium text-slate-100">${planet.name}</span>`)}
           ${td(`${planet.sign_glyph} ${planet.sign}`)}
           ${td(`<span class="font-mono text-slate-200">${planet.position.replace(" " + planet.sign, "")}</span>`)}
@@ -626,7 +633,7 @@
         </tr>`).join("");
 
       const houseRows = western.houses.map((house) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"house",house:house.house,sign:house.sign,sign_glyph:house.sign_glyph,position:house.position,longitude:house.longitude,_title:`House ${house.house}`,_subtitle:"Western · Placidus Houses"})}>
           ${td(`<span class="font-medium text-slate-100">House ${house.house}</span>`)}
           ${td(`${house.sign_glyph} ${house.sign}`)}
           ${td(`<span class="font-mono text-slate-200">${house.position.replace(" " + house.sign, "")}</span>`)}
@@ -657,7 +664,7 @@
       }
       const vedic = astro.vedic;
       const grahaRows = vedic.grahas.map((graha) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"vedic_graha",glyph:graha.glyph,name:graha.name,rashi:graha.rashi,sign:graha.sign,position:graha.position,nakshatra:graha.nakshatra,nakshatra_lord:graha.nakshatra_lord,pada:graha.pada,retrograde:graha.retrograde,_title:`${graha.name} in ${graha.rashi}`,_subtitle:"Vedic · Sidereal Astrology"})}>
           ${td(`<span class="mr-2 text-violet2-soft">${graha.glyph}</span><span class="font-medium text-slate-100">${graha.name}</span>`)}
           ${td(`${graha.rashi} <span class="text-slate-500">(${graha.sign})</span>`)}
           ${td(`<span class="font-mono text-slate-200">${graha.position.replace(" " + graha.rashi, "")}</span>`)}
@@ -671,13 +678,15 @@
       const moonGraha = vedic.grahas.find(g => g.name === "Moon") || {};
       const rahuGraha = vedic.grahas.find(g => g.name === "Rahu") || {};
 
-      const portraitCard = (glyph, role, data) =>
-        `<div class="card-metal rounded-2xl p-5 text-center">
+      const portraitCard = (glyph, role, data) => {
+        const dAttr = data.name ? _da({type:"vedic_graha",glyph:data.glyph||glyph,name:data.name,rashi:data.rashi,sign:data.sign,position:data.position,nakshatra:data.nakshatra,nakshatra_lord:data.nakshatra_lord,pada:data.pada,retrograde:data.retrograde,_title:`${data.name} in ${data.rashi||"—"}`,_subtitle:role+" · Vedic"}) : "";
+        return `<div ${dAttr} class="card-metal rounded-2xl p-5 text-center">
            <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${glyph} ${role}</p>
            <div class="mt-2 font-display text-2xl gold-text">${data.rashi || "—"}</div>
            <p class="mt-1 text-xs text-slate-400">${data.nakshatra || ""} ${data.pada ? "· Pada " + data.pada : ""}</p>
            <p class="mt-0.5 font-mono text-[11px] text-slate-500">${data.position || ""}</p>
          </div>`;
+      };
 
       container.innerHTML =
         contextBanner(astro) +
@@ -724,7 +733,7 @@
 
     function activationTable(title, subtitle, activations, accent) {
       const rows = activations.map((entry) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"hd_gate",glyph:entry.glyph,body:entry.body,notation:entry.notation,gate_name:entry.gate_name,zodiac:entry.zodiac,_title:`Gate ${entry.notation} · ${entry.gate_name}`,_subtitle:title})}>
           ${td(`<span class="mr-2 ${accent}">${entry.glyph}</span><span class="font-medium text-slate-100">${entry.body}</span>`)}
           ${td(`<span class="font-mono text-base ${accent}">${entry.notation}</span>`)}
           ${td(`<span class="text-slate-300">${entry.gate_name}</span>`)}
@@ -745,7 +754,7 @@
       const centers = HD_CENTER_ORDER.map((center) => {
         const defined = hd.defined_centers.includes(center);
         return `
-          <div class="rounded-xl border px-3 py-3 text-center ${defined
+          <div ${_da({type:"hd_center",center,defined,_title:center+" Center",_subtitle:defined?"Defined":"Open / Undefined"})} class="rounded-xl border px-3 py-3 text-center hover:border-gold/50 transition ${defined
             ? "border-gold/50 bg-violet2/15 text-slate-100"
             : "border-charcoal-700/70 bg-charcoal-950/40 text-slate-500"}">
             <p class="text-xs font-medium">${center}</p>
@@ -755,7 +764,7 @@
 
       const channels = hd.channels.length
         ? hd.channels.map((ch) => `
-            <span class="rounded-full border border-violet2/40 bg-violet2/10 px-3 py-1.5 text-xs text-slate-200">
+            <span ${_da({type:"hd_channel",label:ch.label,centers:ch.centers,_title:ch.label,_subtitle:ch.centers.join(" ↔ ")})} class="rounded-full border border-violet2/40 bg-violet2/10 px-3 py-1.5 text-xs text-slate-200 hover:border-gold/50 transition">
               <span class="font-mono text-violet2-soft">${ch.label}</span>
               <span class="text-slate-400"> · ${ch.centers[0]} ↔ ${ch.centers[1]}</span>
             </span>`).join("")
@@ -816,7 +825,7 @@
         </div>`}).join("");
 
       const keyRows = gk.all_keys.map((key) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"gene_key",gene_key:key.gene_key,name:key.name,shadow:key.shadow,gift:key.gift,siddhi:key.siddhi,sources:key.sources,_title:`Gene Key ${key.gene_key} · ${key.name}`,_subtitle:"Gene Keys Spectrum"})}>
           ${td(`<span class="font-mono text-base text-gold-soft">${key.gene_key}</span>`)}
           ${td(`<span class="text-slate-200">${key.name}</span>`)}
           ${td(`<span class="text-slate-400">${key.shadow}</span>`)}
@@ -873,7 +882,7 @@
               ["Pacing", comm.delivery.pacing, "text-emerald-400"],
               ["Avoid", comm.delivery.avoid, "text-red-400"],
             ].map(([label, value, color]) => `
-              <div class="rounded-xl bg-charcoal-950/50 p-4">
+              <div ${_da({type:"comm_delivery",label,value,_title:label,_subtitle:"Communication Preference"})} class="rounded-xl bg-charcoal-950/50 p-4 hover:border hover:border-gold/30 transition">
                 <p class="text-[11px] uppercase tracking-wider ${color}">${label}</p>
                 <p class="mt-2 text-sm leading-relaxed text-slate-300">${value}</p>
               </div>`).join("")}
@@ -909,7 +918,7 @@
       // Cognitive weaknesses (data-specific, not generic)
       const weaknessesHtml = comm.weaknesses && comm.weaknesses.length
         ? comm.weaknesses.map((w) => `
-            <li class="flex items-start gap-3 rounded-xl bg-charcoal-950/50 px-4 py-3">
+            <li ${_da({type:"comm_strength",strength:w.weakness,source:w.source,_title:w.weakness,_subtitle:"Cognitive Vulnerability"})} class="flex items-start gap-3 rounded-xl bg-charcoal-950/50 px-4 py-3 hover:border hover:border-violet2/30 transition">
               <span class="mt-0.5 text-violet2-soft">◈</span>
               <div>
                 <p class="font-medium text-slate-100">${w.weakness}</p>
@@ -935,7 +944,7 @@
 
       // Key indicators table
       const indicatorRows = (comm.key_indicators || []).map((ind) => `
-        <tr class="odd:bg-charcoal-950/30">
+        <tr class="odd:bg-charcoal-950/30" ${_da({type:"comm_indicator",system:ind.system,indicator:ind.indicator,implication:ind.implication,_title:ind.indicator,_subtitle:ind.system})}>
           ${td(`<span class="text-violet2-soft text-xs font-medium">${ind.system}</span>`)}
           ${td(`<span class="font-mono text-sm text-slate-200">${ind.indicator}</span>`)}
           ${td(`<span class="text-xs text-slate-400">${ind.implication}</span>`)}
@@ -1357,6 +1366,358 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
     if (document.getElementById("name").value && document.getElementById("birth_date").value) {
       calculate();
     }
+    // ============================================================
+    // DATA DETAIL SYSTEM — every data point is clickable
+    // ============================================================
+    let _DR = {}, _drId = 0;
+    function _da(obj) { const id = ++_drId; _DR[id] = obj; return `data-did="${id}"`; }
+
+    const PLANET_DESC = {
+      Sun:         { governs: "Core identity, ego, life purpose, vitality — the conscious self.", nature: "Masculine, hot, dry. The king of the planets — symbol of the self projected into the world." },
+      Moon:        { governs: "Emotions, instinct, the subconscious, memory, habits, the mother.", nature: "Feminine, cold, moist. Governs the inner emotional world and rhythmic cycles." },
+      Mercury:     { governs: "Communication, thought, logic, data, commerce, siblings, short travel.", nature: "Neutral, quick. The messenger — mediates between mind and world." },
+      Venus:       { governs: "Love, beauty, pleasure, art, relationships, values, money, aesthetics.", nature: "Feminine, cool, moist. The planet of attraction, magnetism, and desire." },
+      Mars:        { governs: "Drive, courage, conflict, ambition, sexual energy, initiative, action.", nature: "Masculine, hot, dry. The warrior — raw energy that must find a worthy cause." },
+      Jupiter:     { governs: "Expansion, wisdom, faith, abundance, higher learning, philosophy, luck.", nature: "Masculine, warm, moist. The great benefic — enlarges whatever it touches." },
+      Saturn:      { governs: "Structure, discipline, karma, limitation, time, responsibility, mastery.", nature: "Masculine, cold, dry. The great teacher — contracts and concentrates." },
+      Uranus:      { governs: "Innovation, liberation, sudden change, technology, originality, rebellion.", nature: "Trans-personal. Disrupts old structures to birth the new." },
+      Neptune:     { governs: "Dreams, illusions, spirituality, compassion, dissolution, mysticism, art.", nature: "Trans-personal. Dissolves boundaries between self and universe." },
+      Pluto:       { governs: "Transformation, death/rebirth, power, the shadow, compulsion, the underworld.", nature: "Trans-personal. Destroys to regenerate — the phoenix principle." },
+      Chiron:      { governs: "The wounded healer — where you were wounded and where you can heal others.", nature: "Minor planet/comet. Bridges Saturn (personal) and Uranus (transpersonal)." },
+      "North Node":{ governs: "Soul direction in this lifetime — karmic growth edge, what to move toward.", nature: "Lunar node. The evolutionary arrow of the soul in this incarnation." },
+      "South Node": { governs: "What the soul brings from prior lives — deeply familiar but limiting if over-relied on.", nature: "Lunar node. Natural gifts and past-life comfort zones to release." },
+    };
+
+    const SIGN_DESC = {
+      Aries:       { element:"Fire", mode:"Cardinal", ruling:"Mars",           meaning:"Initiative, courage, leadership, directness, pioneering energy. The first spark of the zodiac — pure impulse before thought." },
+      Taurus:      { element:"Earth",mode:"Fixed",   ruling:"Venus",           meaning:"Stability, beauty, sensuality, material mastery, persistence. Builds slowly, values deeply, and keeps what matters forever." },
+      Gemini:      { element:"Air",  mode:"Mutable", ruling:"Mercury",         meaning:"Curiosity, communication, duality, adaptability, information exchange. The mind in perpetual, delighted motion." },
+      Cancer:      { element:"Water",mode:"Cardinal",ruling:"Moon",            meaning:"Nurturing, emotional depth, intuition, home, memory, protection. Knows truth through feeling rather than logic." },
+      Leo:         { element:"Fire", mode:"Fixed",   ruling:"Sun",             meaning:"Confidence, creative self-expression, leadership, generosity, drama. The performer — radiates warmth and expects recognition." },
+      Virgo:       { element:"Earth",mode:"Mutable", ruling:"Mercury",         meaning:"Precision, analysis, service, health, discernment, practical intelligence. Perfects through careful, humble detail work." },
+      Libra:       { element:"Air",  mode:"Cardinal",ruling:"Venus",           meaning:"Balance, harmony, beauty, relationships, justice, diplomacy. Seeks fairness and partnership in all things." },
+      Scorpio:     { element:"Water",mode:"Fixed",   ruling:"Pluto/Mars",      meaning:"Depth, transformation, intensity, psychological power, regeneration. Knows by going underneath every surface." },
+      Sagittarius: { element:"Fire", mode:"Mutable", ruling:"Jupiter",         meaning:"Philosophy, expansion, adventure, truth-seeking, freedom, optimism. The eternal student who aims for the horizon." },
+      Capricorn:   { element:"Earth",mode:"Cardinal",ruling:"Saturn",          meaning:"Ambition, structure, authority, long-term mastery, endurance, integrity. Climbs every mountain through patient discipline." },
+      Aquarius:    { element:"Air",  mode:"Fixed",   ruling:"Uranus/Saturn",   meaning:"Innovation, humanitarianism, originality, community, rebellion, idealism. The future-bringer ahead of their time." },
+      Pisces:      { element:"Water",mode:"Mutable", ruling:"Neptune/Jupiter", meaning:"Compassion, spirituality, imagination, dissolution, empathy, dreams. The ocean that absorbs and understands everything." },
+    };
+
+    const HOUSE_DESC = {
+      1:  { title:"Self & Identity",         keywords:"Body, appearance, first impressions, personality, rising sign — how the world meets you." },
+      2:  { title:"Resources & Values",      keywords:"Money, possessions, self-worth, earning ability, what you value and protect." },
+      3:  { title:"Mind & Communication",    keywords:"Thinking, speaking, writing, siblings, neighbors, short travel, early education." },
+      4:  { title:"Home & Roots",            keywords:"Family of origin, home environment, ancestry, inner foundation, the mother, the past." },
+      5:  { title:"Creativity & Pleasure",   keywords:"Self-expression, romance, children, play, fun, artistic gifts, speculation and risk." },
+      6:  { title:"Health & Service",        keywords:"Daily routines, work habits, health, diet, pets, service to others, self-improvement." },
+      7:  { title:"Partnership & Others",    keywords:"Marriage, committed partnerships, open enemies, contracts, one-on-one relationships." },
+      8:  { title:"Transformation & Depth",  keywords:"Shared resources, intimacy, death, rebirth, inheritance, occult, psychology, taxes." },
+      9:  { title:"Wisdom & Expansion",      keywords:"Higher education, philosophy, religion, long-distance travel, publishing, the big picture." },
+      10: { title:"Career & Public Life",    keywords:"Reputation, career, authority, the father, public image, ambitions, vocational calling." },
+      11: { title:"Community & Vision",      keywords:"Friends, groups, networks, hopes, wishes, humanitarian causes, future goals." },
+      12: { title:"Spirituality & Surrender",keywords:"Hidden matters, solitude, retreat, karma, the unconscious, mysticism, hidden enemies." },
+    };
+
+    const NAKSHATRA_DESC = {
+      Ashwini:"The horse-heads — Ketu ruled. Speed, healing, new beginnings. The medicine of the gods: swift initiation before the full form arrives.",
+      Bharani:"The bearer — Venus ruled. Transformation through sexuality and creativity. Carries the seeds of new life through the fire of experience.",
+      Krittika:"The cutter — Sun ruled. Purification, determination, discipline through fire. Cuts away impurity to reveal the essential.",
+      Rohini:"The red one — Moon ruled. Beauty, fertility, sensuality, abundance. The most beloved nakshatra: the Moon's favorite dwelling.",
+      Mrigashira:"The deer head — Mars ruled. Searching, gentle curiosity, the seeker. The eternal quest for something just beyond reach.",
+      Ardra:"The moist one / teardrop — Rahu ruled. Storms, tears, destruction leading to renewal. Transformation through the wild, violent face of nature.",
+      Punarvasu:"The good again — Jupiter ruled. Return, restoration, abundance, finding home after wandering. The joy of return.",
+      Pushya:"The nourisher — Saturn ruled. Nourishment, support, protection, spiritual growth. The most auspicious nakshatra — pure giving.",
+      Ashlesha:"The clinging star — Mercury ruled. Kundalini, penetration, hypnotic power, the serpent force. Deep knowing that coils through everything.",
+      Magha:"The great one — Ketu ruled. Ancestors, royalty, power, tradition. The throne of the ancestors — authority earned through lineage.",
+      "Purva Phalguni":"The former red one — Venus ruled. Pleasure, creative rest, romance, luxury. Restoration and enjoyment after achievement.",
+      "Uttara Phalguni":"The latter red one — Sun ruled. Service, patronage, stable relationships, responsibility. Pleasure with purpose.",
+      Hasta:"The hand — Moon ruled. Skill, craftsmanship, healing through hands, precision and dexterity. The artist's steady touch.",
+      Chitra:"The bright star — Mars ruled. Creativity, beauty, architecture, brilliance. The cosmic architect building form from vision.",
+      Swati:"The sword — Rahu ruled. Independence, flexibility, air, transformation. The free-moving wind — adaptable, uncontrollable.",
+      Vishakha:"The forked one — Jupiter ruled. Purpose, ambition, patience, achievement through waiting. Two paths that converge in victory.",
+      Anuradha:"The follower of Radha — Saturn ruled. Devotion, deep friendship, success abroad. Loyal dedication that crosses any distance.",
+      Jyeshtha:"The eldest — Mercury ruled. Authority, seniority, occult power, protection. The chief and protector — earned through experience.",
+      Mula:"The root — Ketu ruled. Dissolution, going to the root, inquiry. Destroys surface to discover the essential root of things.",
+      "Purva Ashadha":"The former invincible one — Venus ruled. Purification, invincibility, enthusiasm. Cannot be defeated — purified through water.",
+      "Uttara Ashadha":"The latter invincible one — Sun ruled. Final victory, universal truths, righteousness. Ultimate triumph through integrity.",
+      Shravana:"Hearing — Moon ruled. Listening, learning, preservation of knowledge, connection. Wisdom arrives through deep, patient listening.",
+      Dhanishtha:"The most famous — Mars ruled. Wealth, music, fame, abundance, leadership. Beats the drum of success with natural rhythm.",
+      Shatabhisha:"A hundred healers — Rahu ruled. Healing, mysticism, research, secrets. The mysterious physician who works in hidden ways.",
+      "Purva Bhadrapada":"The former fortunate feet — Jupiter ruled. Passion, transformation through fire, two-faced wisdom. Intense devotion.",
+      "Uttara Bhadrapada":"The latter fortunate feet — Saturn ruled. Depth, cosmic serpent wisdom, stillness, protection. Profound, ancient knowing.",
+      Revati:"The wealthy — Mercury ruled. Nourishment, protection, completion, spiritual journey. The final journey home through compassion.",
+    };
+
+    const HD_CENTER_DESC = {
+      Head:         { title:"Head Center",         governs:"Mental pressure, inspiration, existential questions, and the drive to make sense of life.", defined:"You have a consistent, reliable source of mental pressure and inspiration. Your questions and thought-streams are yours alone — be careful not to impose your mental pressure on others.", open:"You are not here to have fixed answers or constant mental pressure. You are here to be inspired by others' questions without being pressured to answer them. Your wisdom is knowing which questions are worth pursuing." },
+      Ajna:         { title:"Ajna Center",          governs:"Mental processing, conceptualization, analysis, certainty, opinions, and fixed perspectives.", defined:"You have a consistent, fixed way of thinking and processing. Your opinions and conceptual frameworks are reliable and uniquely yours — you create mental certainty in yourself and others.", open:"You are not designed to have fixed opinions. You are the most flexible thinker in the room — a receptor for others' ideas and mental energy. Your gift is evaluating ideas without attaching to them as 'yours'." },
+      Throat:       { title:"Throat Center",        governs:"Communication, manifestation, action, speaking, and the bridge between thought and reality.", defined:"You have a consistent, reliable voice and the ability to manifest through speaking and action. Your communication carries inherent weight and presence — you are heard.", open:"You are not designed to fill silence. Your most powerful communication comes in response to an invitation or in reaction to something real. Silence is as much your language as speech." },
+      G:            { title:"G Center (Identity)",  governs:"Direction, identity, love, self-expression, and the magnetic field that draws your life path.", defined:"You have a fixed sense of self, direction, and identity. You know who you are and where you're going — and others orient themselves by your consistency.", open:"Your identity and sense of direction are fluid and environment-dependent. You are here to experience many different selves and directions, discovering what love and direction feel like in each context." },
+      Heart:        { title:"Heart / Ego Center",   governs:"Willpower, ego, self-worth, material world, promises, and the ability to commit and follow through.", defined:"You have reliable willpower and consistent self-worth. You can make promises and keep them. Avoid letting others drain your willpower — it's yours to direct.", open:"Your willpower comes in waves, not consistently. Avoid making promises under pressure — your commitments need to be made freely and spontaneously. Self-worth is not earned through achievement." },
+      Sacral:       { title:"Sacral Center",        governs:"Life-force energy, sexuality, response, and the capacity for sustainable, generative work.", defined:"You are a Generator or Manifesting Generator — the life-force of humanity. You have sustainable, motor energy that regenerates through doing what you love. Your gut response (ah-huh / uh-uh) is your most reliable guide.", open:"You are a non-Sacral being (Projector, Manifestor, or Reflector). You amplify and reflect others' sacral energy. You are not designed for sustained 9-to-5 work — regular retreat and rest are essential, not optional." },
+      Spleen:       { title:"Spleen Center",        governs:"Survival instinct, immune system, in-the-moment intuition, fears, and physical well-being.", defined:"You have consistent access to intuitive, survival-level knowing. Your intuition is reliable and often speaks once — trust the first hit without second-guessing. Your immune system has a stable, reliable intelligence.", open:"Your intuition comes in waves rather than constantly. You may be over-sensitive to others' fears and health states. The body's signals are crucial data — stay connected to what your body is telling you right now." },
+      "Solar Plexus":{ title:"Solar Plexus Center", governs:"Emotions, feelings, sensitivity, emotional truth, spirit, and the emotional wave cycle.", defined:"Your emotional wave IS your authority. You live in an emotional wave that cycles between hope/excitement and pain/depression — and there is no truth in the moment. Wait for emotional clarity to emerge over time before deciding anything significant.", open:"You are not here to have your own emotional wave. You feel and amplify others' emotional fields with intense sensitivity. This makes you highly empathic. The key is knowing which emotions are yours versus amplified from others." },
+      Root:         { title:"Root Center",          governs:"Primal pressure, stress, adrenaline, the fuel that drives action, and the need to get things done.", defined:"You have consistent, rhythmic pressure that fuels your work and drives completion. You operate under a healthy, internal stress that motivates — this is your natural rhythm.", open:"You take in and amplify root pressure from your environment. Decisions made under pressure are often wrong — the pressure you feel may not be yours. Learn to distinguish urgency that serves from urgency that traps." },
+    };
+
+    const CHANNEL_DESC = {
+      "1-8":"Inspiration (Creative Role Model). Creative expression as a living example — inspiring others through individual creativity without trying to do so.",
+      "2-14":"The Beat (Keeper of Keys). Life-force in alignment with higher direction. Holds the keys to others' direction without necessarily knowing it.",
+      "3-60":"Mutation (Energy that Creates Change). Trial-and-error energy that creates change through persistence within limitations and chaos.",
+      "4-63":"Logic (Mental Ease). Establishes logical patterns and creates mental certainty through proven, repeatable formulas.",
+      "5-15":"Rhythm (The Keeper of Rhythms). Natural behavioral rhythms — neither too fast nor too slow — that others unconsciously follow.",
+      "6-59":"Mating (Focused on Reproduction). The force of intimacy, breakthrough, and the drive to bond and create.",
+      "7-31":"The Alpha (Leadership through Voice). Natural democratic leadership — elected to lead by others who sense direction and guidance.",
+      "9-52":"Concentration (Determination). Deep focus on details that serve the whole — the ability to concentrate in stillness.",
+      "10-20":"The Awakening (Commitment to Higher Principles). Love of self expressed as living fully in the present moment.",
+      "11-56":"Curiosity (The Searcher). The stimulation of ideas and possibilities that become stories, stimulating others' hunger for experience.",
+      "12-22":"Openness (Grace Under Pressure). Emotional depth and sensitivity transformed into graceful, selective communication.",
+      "13-33":"The Prodigal (The Witness). Deep listening and witnessing, then returning to share universal human lessons.",
+      "16-48":"Wavelength (The Talent). Mastery through repetition — depth of skill built over time through consistent practice.",
+      "17-62":"Acceptance (Organizational Intelligence). Opinionated logical mind that organizes facts into structured, practical conclusions.",
+      "18-58":"Judgment (Insatiability). The drive toward correction and perfection — seeing clearly what can be improved.",
+      "19-49":"Synthesis (Wanting). Tribal sensitivity to resources, emotional responses to community needs and belonging.",
+      "20-34":"Charisma (Where the Flesh is Tone). Pure presence through action — being IS doing. Charisma without trying.",
+      "21-45":"The Money Line (Hunting/Gathering). Control and management of material resources — the natural administrator.",
+      "23-43":"Structuring (Individuation). Unique individual insights that break through convention — the freak-to-genius channel.",
+      "24-61":"Awareness (Blessings). Inner knowing and sudden inspiration that arrives unbidden — the mental channel of grace.",
+      "25-51":"Initiation (Needing to be First). The shock of initiation — courage to face the unknown and emerge transformed.",
+      "26-44":"Surrender (Transmitter). Memory and survival instinct combined with willpower — the natural salesperson.",
+      "27-50":"Preservation (Custodianship). Nurturing others and preserving what matters — the community caretaker and guardian.",
+      "28-38":"Struggle (Stubbornness). Purpose found through fighting — struggle reveals what is worth living and dying for.",
+      "29-46":"Discovery (Saying Yes to Life). Commitment to experiences — saying yes to life with the whole body leads to discovery.",
+      "30-41":"Recognition (Focused Energy). Emotional desire for new experiences — feelings drive the search for the next feeling.",
+      "32-54":"Transformation (Ambition). Instinctive ambition and the recognition of what patterns and people will endure.",
+      "34-57":"Power (Archaic). Survival through raw power and present-moment intuition — ancient strength in the now.",
+      "35-36":"Transience (Crisis and Experience). Seeking experience through crisis — the emotional hunger for the full range of life.",
+      "37-40":"Community (Bargaining). Emotional and willful bonds of family and community — the social contract made personal.",
+      "38-28":"Struggle — see 28-38.",
+      "39-55":"Emoting (The Provocateur). Emotional provocation that awakens spirit and desire in others — the sacred irritant.",
+      "40-37":"Community — see 37-40.",
+      "41-30":"Recognition — see 30-41.",
+      "42-53":"Maturation (Cyclic Consciousness). Full experience of life's cycles — beginning to end, in every domain.",
+      "43-23":"Structuring — see 23-43.",
+      "47-64":"Abstraction (Mental Activity/Clarity). Making meaning from confused life experiences — the mental storyteller.",
+    };
+
+    const NUM_MEANINGS = {
+      1:{keywords:"Leadership, independence, originality, pioneering courage",shadow:"Stubbornness, isolation, need to control, domination",gift:"The pioneer who carves new paths without a map. Self-reliant, original, and willing to stand alone."},
+      2:{keywords:"Partnership, sensitivity, diplomacy, intuition, cooperation",shadow:"Over-dependence, over-sensitivity, indecision, manipulation",gift:"The diplomat who bridges worlds through patience and listening. Masters the subtle power of relationship and emotional intelligence."},
+      3:{keywords:"Creative expression, joy, communication, optimism, self-expression",shadow:"Scattered energy, self-doubt, emotional volatility, superficiality",gift:"The artist who lifts others through beauty, words, and authentic self-expression. Joy as a spiritual practice."},
+      4:{keywords:"Foundation, order, discipline, reliability, hard work",shadow:"Rigidity, stubbornness, limitation, over-seriousness",gift:"The builder who creates lasting structures from patient, disciplined effort. The rock that others stand on."},
+      5:{keywords:"Freedom, change, experience, adaptability, sensory intelligence",shadow:"Restlessness, excess, irresponsibility, avoidance of depth",gift:"The explorer who masters the art of change. Brings new worlds home and shows others what is possible."},
+      6:{keywords:"Nurturing, responsibility, beauty, harmony, service, family",shadow:"Perfectionism, self-sacrifice, controlling love, martyrdom",gift:"The nurturer who creates beauty and holds family and community together through generous, unconditional care."},
+      7:{keywords:"Analysis, introspection, wisdom, spiritual depth, solitude",shadow:"Isolation, secrecy, cynicism, cold intellectualism",gift:"The mystic analyst who bridges the material and spiritual through deep inquiry. Wisdom that can only be found alone."},
+      8:{keywords:"Power, abundance, authority, material mastery, executive force",shadow:"Control, materialism, abuse of power, obsession with status",gift:"The executive who masters the material plane. Creates abundance and structures that empower others at scale."},
+      9:{keywords:"Completion, compassion, humanitarianism, universal wisdom",shadow:"Bitterness, self-righteousness, emotional unavailability, endings",gift:"The humanitarian whose universal love serves all of humanity. Wisdom earned through many lifetimes of experience."},
+      11:{keywords:"Intuition, illumination, inspiration, spiritual vision, sensitivity",shadow:"Nervous tension, impracticality, over-idealism, anxiety",gift:"The master illuminator — a living bridge between the material and spiritual, here to inspire through direct knowing."},
+      22:{keywords:"Master builder, large-scale vision, practical idealism, legacy",shadow:"Overwhelm, impracticality, fear of one's own power, avoidance",gift:"The master builder — the most powerful number. Capable of manifesting great visions that serve humanity at scale."},
+      33:{keywords:"Master teacher, universal service, selfless compassion, healing",shadow:"Martyrdom, co-dependence, self-sacrifice, savior complex",gift:"The master teacher — the rarest vibration. Living in pure, unconditional service to elevate collective consciousness."},
+    };
+
+    function buildDataDetailHtml(obj) {
+      const { type } = obj;
+      function sec(label, content, col="text-violet2-soft", bg="bg-violet2/5", br="border-violet2/20") {
+        return `<div class="rounded-xl ${bg} border ${br} p-4"><p class="text-[10px] uppercase tracking-wider ${col} mb-2">${label}</p><p class="text-sm leading-relaxed text-slate-300">${content}</p></div>`;
+      }
+      const goldSec  = (l,c) => sec(l,c,"text-gold-soft","bg-gold/5","border-gold/20");
+      const greenSec = (l,c) => sec(l,c,"text-emerald-400","bg-emerald-950/30","border-emerald-700/20");
+      const greySec  = (l,c) => sec(l,c,"text-slate-400","bg-charcoal-950/50","border-charcoal-700/40");
+
+      if (type === "planet") {
+        const { glyph, name, sign, position, longitude, retrograde } = obj;
+        const pd = PLANET_DESC[name] || {};
+        const sd = SIGN_DESC[sign]   || { element:"", mode:"", ruling:"", meaning:"" };
+        return `<div class="mb-5 flex items-center gap-4"><span class="font-display text-5xl text-violet2-soft">${glyph}</span>
+          <div><h3 class="font-display text-2xl gold-text">${name} in ${sign}</h3>
+          <p class="text-sm text-slate-400 font-mono">${position} · ${retrograde?"Retrograde ℞":"Direct"}</p></div></div>
+          <div class="space-y-3">
+            ${sec(`What ${name} governs`, pd.governs||"—")}
+            ${goldSec(`${sign} — ${sd.element} · ${sd.mode}`, `Ruled by ${sd.ruling}. ${sd.meaning}`)}
+            ${greenSec("This combination", `${name} in ${sign}: ${(pd.governs||"").split(",")[0]} expressed through ${(sd.element||"").toLowerCase()} ${(sd.mode||"").toLowerCase()} energy. ${sign} ${(sd.meaning||"").split(".")[0].toLowerCase()}.`)}
+            ${pd.nature ? greySec("Planetary nature", pd.nature) : ""}
+          </div>`;
+      }
+
+      if (type === "house") {
+        const { house, sign, position, longitude } = obj;
+        const hd = HOUSE_DESC[house] || {};
+        const sd = SIGN_DESC[sign]   || {};
+        const ordinals = ["","1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th"];
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${ordinals[house]||house+"th"} House — ${hd.title||""}</h3>
+          <p class="text-sm text-slate-400 font-mono mt-1">${sign} on the cusp · ${position}</p></div>
+          <div class="space-y-3">
+            ${goldSec(`House ${house} governs`, hd.keywords||"—")}
+            ${sec(`${sign} on this cusp`, `${sd.element||""} · ${sd.mode||""} · Ruled by ${sd.ruling||""}. ${sd.meaning||""} This sign's quality colors how you approach ${(hd.title||"").toLowerCase()}.`)}
+          </div>`;
+      }
+
+      if (type === "angle") {
+        const { label, sign, sign_glyph, position } = obj;
+        const sd = SIGN_DESC[sign] || {};
+        const angles = {
+          "Ascendant":"The Rising Sign — the zodiac degree on the eastern horizon at your birth moment. It shapes your outer personality, physical appearance, instinctive behavior, and how the world first meets you.",
+          "Midheaven (MC)":"The highest point of the sky at your birth. Represents your public reputation, career path, calling, and what you are known for in the world — your life's visible achievement.",
+          "Descendant":"The western horizon — the sign you project onto partners and seek in close relationships. Your complementary opposite; what you attract and need.",
+          "Imum Coeli (IC)":"The lowest point of the chart — your private roots, home life, family of origin, ancestry, and inner psychological foundation.",
+        };
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${sign_glyph} ${sign}</h3>
+          <p class="text-sm text-slate-400 mt-1">${label} · ${position}</p></div>
+          <div class="space-y-3">
+            ${goldSec("What this angle represents", angles[label]||label)}
+            ${sec(`${sign} quality`, `${sd.element||""} · ${sd.mode||""} · Ruled by ${sd.ruling||""}. ${sd.meaning||""}`)}
+          </div>`;
+      }
+
+      if (type === "vedic_graha") {
+        const { glyph, name, rashi, position, nakshatra, nakshatra_lord, pada, retrograde } = obj;
+        const pd = PLANET_DESC[name] || {};
+        const nd = NAKSHATRA_DESC[nakshatra] || "Ancient lunar mansion rich in symbolic meaning.";
+        const padaSign = ["Aries","Taurus","Gemini","Cancer"][pada-1]||"";
+        const padaQuality = ["initiative and courage","stability and material focus","communication and adaptability","emotional and intuitive depth"][pada-1]||"";
+        return `<div class="mb-5 flex items-center gap-4"><span class="font-display text-5xl text-violet2-soft">${glyph}</span>
+          <div><h3 class="font-display text-2xl gold-text">${name} in ${rashi}</h3>
+          <p class="text-sm text-slate-400">${nakshatra} · Pada ${pada} · ${retrograde?"Retrograde ℞":"Direct"}</p>
+          <p class="text-xs text-slate-500 font-mono">${position}</p></div></div>
+          <div class="space-y-3">
+            ${sec(`${name} governs`, pd.governs||"—")}
+            ${goldSec(`${nakshatra} Nakshatra`, `Ruled by ${nakshatra_lord}. ${nd}`)}
+            ${greySec(`Pada ${pada} — ${padaSign} navamsha`, `Each nakshatra's four padas map to Aries → Cancer in sequence. Pada ${pada} brings ${padaQuality} to this placement.`)}
+          </div>`;
+      }
+
+      if (type === "hd_center") {
+        const { center, defined } = obj;
+        const cd = HD_CENTER_DESC[center] || { title:center, governs:"", defined:"", open:"" };
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${cd.title}</h3>
+          <p class="text-sm ${defined?"text-gold-soft":"text-violet2-soft"} mt-1">${defined?"✦ Defined — consistent & reliable":"◈ Open — receptive & wise"}</p></div>
+          <div class="space-y-3">
+            ${goldSec("What this center governs", cd.governs)}
+            ${defined ? greenSec("Defined — what this means for you", cd.defined) : sec("Open — what this means for you", cd.open)}
+          </div>`;
+      }
+
+      if (type === "hd_channel") {
+        const { label, centers } = obj;
+        const gates = label.replace(/Gate\s*/gi,"").split(/\s*[–\-]\s*/).map(s=>s.trim());
+        const key1 = gates[0]+"-"+gates[1], key2 = gates[1]+"-"+gates[0];
+        const desc = CHANNEL_DESC[key1] || CHANNEL_DESC[key2] || "A defined channel connecting two energy centers — creating a consistent, reliable energy circuit in the bodygraph.";
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${label}</h3>
+          <p class="text-sm text-violet2-soft mt-1">${centers.join(" ↔ ")}</p></div>
+          <div class="space-y-3">
+            ${goldSec("Channel meaning", desc)}
+            ${greySec("What a defined channel means", "Both gates are activated (by Personality or Design), creating a consistent, always-on energy circuit. This is a fixed quality others reliably feel in your presence.")}
+          </div>`;
+      }
+
+      if (type === "hd_gate") {
+        const { glyph, body, notation, gate_name, zodiac } = obj;
+        return `<div class="mb-5 flex items-center gap-4"><span class="font-display text-4xl text-gold-soft">${glyph}</span>
+          <div><h3 class="font-display text-2xl gold-text">Gate ${notation}</h3>
+          <p class="text-sm text-slate-300">${gate_name}</p>
+          <p class="text-xs text-slate-500 mt-0.5">${body} · ${zodiac}</p></div></div>
+          <div class="space-y-3">
+            ${goldSec("Gate meaning", `Gate ${notation} — ${gate_name}. Each Human Design gate corresponds to one of the 64 hexagrams of the I Ching. This gate carries a specific archetypal energy pattern that is active in your design.`)}
+            ${greySec("Planetary body", `Activated by ${body}. Personality gates (red) are conscious; Design gates (black) are unconscious body-level influences. A gate needs its channel partner to form a complete circuit.`)}
+            ${greySec("Zodiac position", `${zodiac} — the tropical zodiac position of this activation.`)}
+          </div>`;
+      }
+
+      if (type === "gene_key") {
+        const { gene_key, name, shadow, gift, siddhi, sources, sphere } = obj;
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">Gene Key ${gene_key} · ${name}</h3>
+          ${sphere?`<p class="text-sm text-violet2-soft mt-1">${sphere}</p>`:""}
+          ${sources?`<p class="text-xs text-slate-500 mt-0.5">Activated by: ${sources.join(", ")}</p>`:""}</div>
+          <div class="space-y-3">
+            <div class="rounded-xl bg-charcoal-950/50 border border-charcoal-700/40 p-4">
+              <p class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Shadow frequency</p>
+              <p class="font-display text-xl text-slate-400">${shadow}</p>
+              <p class="mt-1 text-xs text-slate-500">The low-frequency expression — unconscious, fear-based pattern to recognize and embrace.</p>
+            </div>
+            <div class="rounded-xl bg-violet2/5 border border-violet2/20 p-4">
+              <p class="text-[10px] uppercase tracking-wider text-violet2-soft mb-1">Gift frequency</p>
+              <p class="font-display text-xl text-slate-200">${gift}</p>
+              <p class="mt-1 text-xs text-slate-400">Emerges when the shadow is embraced — conscious expression of this frequency.</p>
+            </div>
+            <div class="rounded-xl bg-gold/5 border border-gold/30 p-4">
+              <p class="text-[10px] uppercase tracking-wider text-gold-soft mb-1">Siddhi frequency</p>
+              <p class="font-display text-xl gold-text">${siddhi}</p>
+              <p class="mt-1 text-xs text-slate-400">The highest potential — pure divine expression of this archetypal energy.</p>
+            </div>
+          </div>`;
+      }
+
+      if (type === "numerology_extra") {
+        const { label, number, note } = obj;
+        const val = number && number.number !== undefined ? number.number : number;
+        const nm = NUM_MEANINGS[val];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500">${label}</p>
+          <div class="mt-3 font-display text-6xl gold-text">${val||"—"}</div>
+          ${note?`<p class="mt-2 text-xs text-violet2-soft">${note}</p>`:""}
+        </div>
+        ${nm?`<div class="space-y-3">
+          ${goldSec("Keywords", nm.keywords)}
+          ${greenSec("The gift", nm.gift)}
+          ${greySec("The shadow", nm.shadow)}
+        </div>`:""}`;
+      }
+
+      if (type === "comm_delivery") {
+        const { label, value } = obj;
+        const descs = {
+          Tone:"Your natural communication register — the emotional temperature and style you bring to conversations.",
+          Format:"The structure that works best for you — how information lands most effectively when you share or receive it.",
+          Pacing:"Your natural processing rhythm — how quickly or slowly you move through input, decisions, and responses.",
+          Avoid:"Communication patterns that create friction or conditioning — styles that make it harder to hear the actual message.",
+        };
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${label}</h3>
+          <p class="text-sm text-slate-400 mt-1">Communication preference</p></div>
+          <div class="space-y-3">
+            ${goldSec("What this means for you", value)}
+            ${greySec("Why this preference", descs[label]||"")}
+          </div>`;
+      }
+
+      if (type === "comm_strength") {
+        const { strength, source } = obj;
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${strength}</h3>
+          <p class="text-sm text-violet2-soft mt-1">Cognitive pattern</p></div>
+          <div class="space-y-3">
+            ${sec("Cross-system source", source)}
+            ${greenSec("What this means", "This is a cross-system convergence — multiple independent systems all point to the same quality. That convergence makes it a reliable signature of how this mind operates.")}
+          </div>`;
+      }
+
+      if (type === "comm_indicator") {
+        const { system: sys, indicator, implication } = obj;
+        return `<div class="mb-5"><p class="text-xs text-violet2-soft uppercase tracking-wider">${sys}</p>
+          <h3 class="font-display text-2xl gold-text mt-1">${indicator}</h3></div>
+          <div class="space-y-3">
+            ${goldSec("What this indicates", implication)}
+            ${greySec("System context", `This indicator comes from ${sys} — one of the five core systems in your blueprint. Each system's signal adds confidence to the overall communication profile.`)}
+          </div>`;
+      }
+
+      return `<p class="text-sm text-slate-400">No additional detail for this data point.</p>`;
+    }
+
+    // Extended click listener for data-did items
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-did]");
+      if (!el || !el.dataset.did) return;
+      const obj = _DR[parseInt(el.dataset.did)];
+      if (!obj) return;
+      document.getElementById("dm-subtitle").textContent = obj._subtitle || "";
+      document.getElementById("dm-title").textContent   = obj._title   || "";
+      document.getElementById("dm-extras").innerHTML    = "";
+      document.getElementById("dm-extras").style.display = "none";
+      document.getElementById("dm-body").innerHTML      = buildDataDetailHtml(obj);
+      const modal = document.getElementById("detail-modal");
+      modal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    });
+
     // ---------- Panel Detail View (replaces modal) ----------
     let _headlineDescriptions = {};
     let _lastData = null;

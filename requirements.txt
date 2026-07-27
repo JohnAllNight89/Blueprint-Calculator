@@ -1,7 +1,7 @@
-fastapi
-uvicorn[standard]
+pyswisseph>=2.10,<3
+timezonefinder>=8,<9
+tzdata
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart
 pydantic
-jinja2
-pytz
-timezonefinder
-pyswisseph

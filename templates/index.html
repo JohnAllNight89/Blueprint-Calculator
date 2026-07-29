@@ -1124,115 +1124,269 @@
     // ---------- All Aspects ----------
     function updateAllAspectsPanel() {
       const allPanel = document.getElementById("panel-all");
-      if (!allPanel) return;
+      if (!allPanel || !_lastData) return;
       allPanel.innerHTML = "";
 
-      const aspects = [
-        { id: "numerology",    name: "Numerology" },
-        { id: "western",       name: "Western Astrology" },
-        { id: "vedic",         name: "Vedic Astrology" },
-        { id: "humandesign",   name: "Human Design" },
-        { id: "genekeys",      name: "Gene Keys" },
-        { id: "communication", name: "Communication Profile" },
+      const d   = _lastData;
+      const pro = d.profile    || {};
+      const num = d.numerology || {};
+      const ast = d.astrology  || {};
+      const syn = d.synthesis  || {};
+      const wst = (ast.western        || {});
+      const ved = (ast.vedic          || {});
+      const hd  = (ast.human_design   || {});
+      const gk  = (ast.gene_keys      || {});
+      const com = (ast.communication  || {});
+
+      const nv  = (x) => x && x.number !== undefined ? x.number : x;
+      const isM = (x) => [11,22,33].includes(nv(x));
+      const mk  = (x) => isM(x) ? " ✦" : "";
+      const p   = (s,n) => String(s||"").padEnd(n);
+      const pr  = (s,n) => String(s||"").padStart(n);
+
+      // ── section text builders ────────────────────────────────────────────
+
+      function buildBirth() {
+        return [
+          `Name:          ${pro.name        || "—"}`,
+          `Birth Date:    ${pro.birth_date  || "—"}`,
+          `Birth Time:    ${pro.birth_time  || "—"}`,
+          `Birth Place:   ${pro.birth_place || "—"}`,
+        ].join("\n");
+      }
+
+      function buildNumerology() {
+        const L = [];
+        const row = (lbl, x) => {
+          const val = nv(x); const sub = x && x.subtitle ? `  — ${x.subtitle}` : "";
+          return `${p(lbl,22)}${pr(val||"—",3)}${mk(x)}${sub}`;
+        };
+        L.push("── Core Identity ─────────────────────────────");
+        L.push(row("Life Path",          num.life_path));
+        L.push(row("Expression",         num.expression));
+        L.push(row("Soul Urge",          num.soul_urge));
+        L.push(row("Personality",        num.personality));
+        L.push("", "── Birth-Date Pillars ────────────────────────");
+        L.push(row("Attitude",           num.attitude));
+        L.push(row("Birthday",           num.birthday));
+        L.push(row("Generation",         num.generation));
+        L.push("", "── Derived Numbers ───────────────────────────");
+        L.push(row("Maturity",           num.maturity));
+        L.push(row("Balance",            num.balance));
+        L.push(row("Subconscious Self",  num.subconscious_self));
+        L.push("", "── Karmic Patterns ───────────────────────────");
+        const kd = num.karmic_debts; const kl = num.karmic_lessons;
+        L.push(`${"Karmic Debts".padEnd(22)} ${kd && kd.length ? kd.join(", ") : "None"}`);
+        L.push(`${"Karmic Lessons".padEnd(22)} ${kl && kl.length ? kl.join(", ") : "None"}`);
+        L.push("", "── Active Timing ─────────────────────────────");
+        L.push(row("Personal Year",  num.personal_year));
+        L.push(row("Personal Month", num.personal_month));
+        L.push(row("Personal Day",   num.personal_day));
+        L.push("", "── Life Cycles ───────────────────────────────");
+        if (num.pinnacles)  L.push(`Pinnacles:   ${num.pinnacles .map(nv).join("  ·  ")}`);
+        if (num.challenges) L.push(`Challenges:  ${num.challenges.map(nv).join("  ·  ")}`);
+        if (num.periods)    L.push(`Periods:     ${num.periods   .map(nv).join("  ·  ")}`);
+        return L.join("\n");
+      }
+
+      function buildWestern() {
+        if (!wst.planets) return "(Western astrology not calculated)";
+        const L = [];
+        L.push("── Planets (Tropical) ──────────────────────────────────────────────────");
+        L.push(`${p("Body",15)} ${p("Sign",16)} ${p("Position",20)} Status`);
+        L.push("─".repeat(68));
+        (wst.planets||[]).forEach(pl =>
+          L.push(`${p(pl.glyph+" "+pl.name,15)} ${p(pl.sign_glyph+" "+pl.sign,16)} ${p(pl.position,20)} ${pl.retrograde?"Retrograde ℞":"Direct"}`)
+        );
+        L.push("", "── Houses (Placidus) ───────────────────────────────────────────────────");
+        L.push(`${p("House",10)} ${p("Sign",16)} Position`);
+        L.push("─".repeat(52));
+        (wst.houses||[]).forEach(h =>
+          L.push(`${p("House "+h.house,10)} ${p(h.sign_glyph+" "+h.sign,16)} ${h.position||""}`)
+        );
+        L.push("", "── Angles ──────────────────────────────────────────────────────────────");
+        const ang = wst.angles || {};
+        if (ang.ascendant)  L.push(`ASC (Ascendant):   ${ang.ascendant.sign_glyph} ${ang.ascendant.sign}  —  ${ang.ascendant.position}`);
+        if (ang.midheaven)  L.push(`MC  (Midheaven):   ${ang.midheaven.sign_glyph} ${ang.midheaven.sign}  —  ${ang.midheaven.position}`);
+        if (ang.descendant) L.push(`DSC (Descendant):  ${ang.descendant.sign_glyph} ${ang.descendant.sign}  —  ${ang.descendant.position}`);
+        if (ang.imum_coeli) L.push(`IC  (Imum Coeli):  ${ang.imum_coeli.sign_glyph} ${ang.imum_coeli.sign}  —  ${ang.imum_coeli.position}`);
+        return L.join("\n");
+      }
+
+      function buildVedic() {
+        if (!ved.grahas) return "(Vedic astrology not calculated)";
+        const L = [];
+        if (ved.lagna) L.push(`Lagna (Ascendant):  ${ved.lagna.rashi} (${ved.lagna.sign})  —  ${ved.lagna.position}`);
+        if (ved.ayanamsa_dms) L.push(`Ayanamsa (${ved.ayanamsa_name||"Lahiri"}):  ${ved.ayanamsa_dms}`);
+        L.push("", "── Grahas (Sidereal) ────────────────────────────────────────────────────────────────────");
+        L.push(`${p("Body",14)} ${p("Rashi",18)} ${p("Position",16)} ${p("Nakshatra",16)} ${p("Lord",8)} Pada  Status`);
+        L.push("─".repeat(90));
+        (ved.grahas||[]).forEach(g =>
+          L.push(`${p(g.glyph+" "+g.name,14)} ${p((g.rashi||"")+" ("+(g.sign||"")+")",18)} ${p(g.position||"",16)} ${p(g.nakshatra||"—",16)} ${p(g.nakshatra_lord||"—",8)} ${g.pada||"—"}     ${g.retrograde?"Retrograde ℞":"Direct"}`)
+        );
+        if (ved.starting_mahadasha) { L.push("", `Starting Mahadasha:  ${ved.starting_mahadasha}`); }
+        return L.join("\n");
+      }
+
+      function buildHumanDesign() {
+        const L = [];
+        L.push(`Type:               ${hd.type             || "—"}`);
+        L.push(`Authority:          ${hd.authority        || "—"}`);
+        L.push(`Profile:            ${hd.profile          || "—"}`);
+        L.push(`Definition:         ${hd.definition       || "—"}`);
+        L.push(`Strategy:           ${hd.strategy         || "—"}`);
+        if (hd.not_self_theme)    L.push(`Not-Self Theme:     ${hd.not_self_theme}`);
+        if (hd.incarnation_cross) L.push(`Incarnation Cross:  ${hd.incarnation_cross}`);
+        L.push("", `Defined Centers:  ${(hd.defined_centers||[]).join("  ·  ") || "None"}`);
+        L.push(`Open Centers:     ${(hd.open_centers  ||[]).join("  ·  ") || "None"}`);
+        if ((hd.channels||[]).length) {
+          L.push("", "── Channels ──────────────────────────────────────────────");
+          hd.channels.forEach(ch => L.push(`  ${p(ch.label,22)} ${(ch.centers||[]).join(" ↔ ")}`));
+        }
+        const printActs = (title, acts) => {
+          if (!acts || !acts.length) return;
+          L.push("", `── ${title} ─────────────────────────────────────`);
+          L.push(`${p("Body",16)} ${p("Gate.Line",12)} ${p("Hexagram Name",30)} Zodiac`);
+          L.push("─".repeat(78));
+          acts.forEach(a => L.push(`${p((a.glyph||"")+" "+(a.body||""),16)} ${p(a.notation||"",12)} ${p(a.gate_name||"—",30)} ${a.zodiac||""}`));
+        };
+        printActs("Personality Activations (Conscious — Red)",  (hd.personality||{}).activations);
+        printActs("Design Activations (Unconscious — Black)",   (hd.design     ||{}).activations);
+        if ((hd.design||{}).moment_utc) { L.push("", `Design Moment (UTC):  ${hd.design.moment_utc}`); }
+        return L.join("\n");
+      }
+
+      function buildGeneKeys() {
+        const L = [];
+        const seq = gk.activation_sequence || [];
+        if (seq.length) {
+          L.push("── Hologenetic Profile (Activation Sequence) ──────────────────────────────────────────────");
+          L.push(`${p("Sphere",22)} ${p("Gate.Line",10)} ${p("Name",24)} ${p("Shadow",20)} ${p("Gift",20)} Siddhi`);
+          L.push("─".repeat(105));
+          seq.forEach(s => L.push(`${p(s.sphere||"—",22)} ${p(s.notation||"",10)} ${p(s.name||"—",24)} ${p(s.shadow||"—",20)} ${p(s.gift||"—",20)} ${s.siddhi||"—"}`));
+        }
+        const allKeys = gk.all_keys || [];
+        if (allKeys.length) {
+          L.push("", "── All Activated Gene Keys ─────────────────────────────────────────────────────────────────");
+          L.push(`${p("Gate",6)} ${p("Name",24)} ${p("Shadow",20)} ${p("Gift",20)} ${p("Siddhi",20)} Sources`);
+          L.push("─".repeat(105));
+          allKeys.forEach(k => L.push(`${p(k.gene_key||"",6)} ${p(k.name||"—",24)} ${p(k.shadow||"—",20)} ${p(k.gift||"—",20)} ${p(k.siddhi||"—",20)} ${(k.sources||[]).join(", ")}`));
+        }
+        return L.join("\n");
+      }
+
+      function buildCommunication() {
+        const L = [];
+        L.push(`Archetype:         ${com.archetype||"—"}`);
+        L.push("", `Summary:\n${com.summary||"—"}`);
+        L.push("", `Processing Style:\n${com.processing_style||"—"}`);
+        if (com.delivery) {
+          L.push("", "── Delivery Preferences ─────────────────────────────────────────────");
+          L.push(`Tone:    ${com.delivery.tone  ||"—"}`);
+          L.push(`Format:  ${com.delivery.format||"—"}`);
+          L.push(`Pacing:  ${com.delivery.pacing||"—"}`);
+          L.push(`Avoid:   ${com.delivery.avoid ||"—"}`);
+        }
+        if ((com.strengths||[]).length) {
+          L.push("", "── Cognitive Strengths ─────────────────────────────────────────────");
+          com.strengths.forEach((s,i) => { L.push(`${i+1}. ${s.strength}`); L.push(`   Source: ${s.source}`); });
+        }
+        if ((com.key_indicators||[]).length) {
+          L.push("", "── Key Indicators ──────────────────────────────────────────────────────────────────");
+          L.push(`${p("System",18)} ${p("Indicator",32)} Implication`);
+          L.push("─".repeat(85));
+          com.key_indicators.forEach(ind => L.push(`${p(ind.system||"",18)} ${p(ind.indicator||"",32)} ${ind.implication||""}`));
+        }
+        return L.join("\n");
+      }
+
+      function buildSynthesis() {
+        const L = [];
+        if (syn.paragraph) { L.push(syn.paragraph); L.push(""); }
+        if ((syn.archetypes||[]).length) {
+          L.push("── Archetypes ───────────────────────────────────────────────────────");
+          syn.archetypes.forEach(a => L.push(`  ${p(a.label+":",16)} ${a.value}${a.detail ? "  —  "+a.detail : ""}`));
+        }
+        return L.join("\n");
+      }
+
+      // ── assemble sections ────────────────────────────────────────────────
+      const SECTIONS = [
+        { title: "BIRTH INFORMATION",            text: buildBirth()         },
+        { title: "NUMEROLOGY",                   text: buildNumerology()    },
+        { title: "WESTERN ASTROLOGY (TROPICAL)", text: buildWestern()       },
+        { title: "VEDIC ASTROLOGY (SIDEREAL)",   text: buildVedic()         },
+        { title: "HUMAN DESIGN",                 text: buildHumanDesign()   },
+        { title: "GENE KEYS",                    text: buildGeneKeys()      },
+        { title: "COMMUNICATION PROFILE",        text: buildCommunication() },
+        { title: "SYNTHESIS",                    text: buildSynthesis()     },
       ];
 
-      const copyContainer = document.createElement("div");
-      copyContainer.className = "border border-purple-500/30 bg-charcoal-950/80 rounded-2xl p-6 mb-8 relative overflow-hidden";
-      copyContainer.innerHTML = `
-        <div class="flex items-center justify-between border-b border-charcoal-700/80 pb-4 mb-4">
-          <div>
-            <h2 class="text-xl font-bold font-display text-gold-soft tracking-wide">Consolidated Soul Blueprint Report</h2>
-            <p class="text-xs text-charcoal-400 mt-1">Formatted clean markdown — copy and paste directly into your client blueprint files.</p>
-          </div>
-          <button id="copy-all-btn" class="flex items-center gap-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all rounded-lg px-4 py-2 text-sm font-semibold active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
-            </svg>
-            <span id="copy-btn-text">Copy Report</span>
-          </button>
-        </div>
-        <div class="relative bg-black/60 border border-charcoal-800 rounded-xl p-4">
-          <pre id="all-aspects-raw-text" class="overflow-auto max-h-96 font-mono text-xs text-gray-300 whitespace-pre-wrap select-all focus:outline-none leading-relaxed"></pre>
-        </div>`;
-      allPanel.appendChild(copyContainer);
+      const divider = "═".repeat(72);
+      const reportHeader = [
+        divider,
+        `SOUL BLUEPRINT REPORT  —  ${pro.name||""}`,
+        [pro.birth_date, pro.birth_time, pro.birth_place].filter(Boolean).join("  ·  "),
+        `Generated ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}`,
+        divider,
+      ].join("\n");
 
-      let fullMarkdown = "# COMPREHENSIVE SOUL BLUEPRINT REPORT\n\n";
+      const fullText = reportHeader + "\n\n" + SECTIONS.map(s =>
+        `\n${divider}\n${s.title}\n${divider}\n\n${s.text}`
+      ).join("\n");
 
-      aspects.forEach((aspect) => {
-        const original = document.getElementById("panel-" + aspect.id);
-        if (!original) return;
-        fullMarkdown += "## " + aspect.name.toUpperCase() + "\n\n";
-        let aspectMarkdown = "";
-
-        const rows = original.querySelectorAll("tr");
-        if (rows.length > 0) {
-          rows.forEach((row) => {
-            const cells = Array.from(row.querySelectorAll("td, th")).map((c) => c.innerText.trim().replace(/\s+/g, " "));
-            if (cells.length >= 2) aspectMarkdown += "* **" + cells[0] + "**: " + cells.slice(1).join(" - ") + "\n";
-            else if (cells.length === 1 && cells[0]) aspectMarkdown += "* " + cells[0] + "\n";
-          });
-          aspectMarkdown += "\n";
-        }
-
-        const contents = original.querySelectorAll("p, li, blockquote");
-        let addedParagraph = false;
-        contents.forEach((el) => {
-          if (el.closest("table")) return;
-          const text = el.innerText.trim();
-          if (!text || text.toLowerCase().includes("verification mode")) return;
-          if (el.tagName === "LI") { aspectMarkdown += "* " + text + "\n"; addedParagraph = true; }
-          else if (el.tagName === "BLOCKQUOTE") { aspectMarkdown += "> " + text + "\n\n"; addedParagraph = true; }
-          else { aspectMarkdown += text + "\n\n"; addedParagraph = true; }
+      // ── render UI ────────────────────────────────────────────────────────
+      function makeCopyBtn(text, label) {
+        const SVG = `<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>`;
+        const btn = document.createElement("button");
+        btn.className = "flex items-center gap-1.5 rounded-lg border border-violet2/30 bg-violet2/10 px-3 py-1.5 text-xs font-semibold text-violet2-soft hover:bg-violet2/20 active:scale-95 transition shrink-0";
+        btn.innerHTML = SVG + label;
+        btn.addEventListener("click", () => {
+          navigator.clipboard.writeText(text).then(() => {
+            btn.innerHTML = "✓ Copied";
+            btn.classList.add("border-emerald-500/40","bg-emerald-500/10","text-emerald-400");
+            setTimeout(() => { btn.innerHTML = SVG+label; btn.classList.remove("border-emerald-500/40","bg-emerald-500/10","text-emerald-400"); }, 2000);
+          }).catch(() => { btn.innerHTML = "⚠ Try selecting text"; setTimeout(()=>{ btn.innerHTML=SVG+label;},2500); });
         });
-        if (addedParagraph) aspectMarkdown += "\n";
-
-        if (aspectMarkdown.trim()) {
-          fullMarkdown += aspectMarkdown.trim() + "\n\n---\n\n";
-        } else {
-          const fallbackText = original.innerText.replace(/Verification Mode/g, "").replace(/\n\s*\n/g, "\n").trim();
-          fullMarkdown += fallbackText + "\n\n---\n\n";
-        }
-
-        const section = document.createElement("div");
-        section.className = "border border-charcoal-700/60 bg-charcoal-900/40 rounded-2xl p-6 mb-8";
-        const header = document.createElement("div");
-        header.className = "flex items-center justify-between border-b border-charcoal-700/80 pb-4 mb-6";
-        header.innerHTML = `
-          <h2 class="text-xl font-bold font-display text-gold-soft tracking-wide">${aspect.name}</h2>
-          <span class="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-semibold text-violet-300 border border-violet-500/20">Verification Mode</span>`;
-        const contentClone = original.cloneNode(true);
-        contentClone.removeAttribute("id");
-        contentClone.classList.remove("hidden", "mt-6");
-        contentClone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
-        section.appendChild(header);
-        section.appendChild(contentClone);
-        allPanel.appendChild(section);
-      });
-
-      fullMarkdown = fullMarkdown.trim().replace(/\n+---\n*$/, "");
-      const codeBlock = document.getElementById("all-aspects-raw-text");
-      if (codeBlock) codeBlock.textContent = fullMarkdown;
-
-      const copyBtn = document.getElementById("copy-all-btn");
-      if (copyBtn) {
-        copyBtn.addEventListener("click", () => {
-          navigator.clipboard.writeText(fullMarkdown).then(() => {
-            const btnText = document.getElementById("copy-btn-text");
-            if (btnText) {
-              btnText.textContent = "Copied!";
-              copyBtn.classList.replace("bg-purple-500/20", "bg-emerald-500/20");
-              copyBtn.classList.replace("text-purple-300", "text-emerald-300");
-              copyBtn.classList.replace("border-purple-500/30", "border-emerald-500/30");
-              setTimeout(() => {
-                btnText.textContent = "Copy Report";
-                copyBtn.classList.replace("bg-emerald-500/20", "bg-purple-500/20");
-                copyBtn.classList.replace("text-emerald-300", "text-purple-300");
-                copyBtn.classList.replace("border-emerald-500/30", "border-purple-500/30");
-              }, 2000);
-            }
-          });
-        });
+        return btn;
       }
+
+      // Top header card
+      const topCard = document.createElement("div");
+      topCard.className = "card-metal-gold rounded-2xl p-6 mb-6";
+      const topRow = document.createElement("div");
+      topRow.className = "flex items-start justify-between gap-4 flex-wrap";
+      const titleDiv = document.createElement("div");
+      titleDiv.innerHTML = `
+        <h2 class="font-display text-2xl tracking-wide gold-text">${pro.name||"Soul Blueprint"}</h2>
+        <p class="mt-1 text-sm text-slate-400">${[pro.birth_date,pro.birth_time,pro.birth_place].filter(Boolean).join("  ·  ")}</p>
+        <p class="mt-1 text-xs text-slate-500">Every data point from this calculation — copy any section or the complete report.</p>`;
+      const copyAllBtn = makeCopyBtn(fullText, " Copy Full Report");
+      copyAllBtn.className = "flex items-center gap-2 rounded-lg border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold-soft hover:bg-gold/20 active:scale-95 transition shrink-0 mt-1";
+      topRow.appendChild(titleDiv);
+      topRow.appendChild(copyAllBtn);
+      topCard.appendChild(topRow);
+      allPanel.appendChild(topCard);
+
+      // Per-section cards
+      SECTIONS.forEach(sec => {
+        if (!sec.text.trim() || sec.text.includes("not calculated")) return;
+        const card = document.createElement("div");
+        card.className = "card-metal rounded-2xl overflow-hidden mb-4";
+        const hdr = document.createElement("div");
+        hdr.className = "flex items-center justify-between px-5 py-3 border-b border-charcoal-700/60";
+        const ttl = document.createElement("h3");
+        ttl.className = "font-display text-xs tracking-[0.22em] text-gold-soft uppercase";
+        ttl.textContent = sec.title;
+        hdr.appendChild(ttl);
+        hdr.appendChild(makeCopyBtn(sec.text, " Copy"));
+        const pre = document.createElement("pre");
+        pre.className = "px-5 py-4 font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed overflow-x-auto select-all";
+        pre.textContent = sec.text;
+        card.appendChild(hdr);
+        card.appendChild(pre);
+        allPanel.appendChild(card);
+      });
     }
 
     // ---------- Summary — clean narrative ----------

@@ -1138,121 +1138,110 @@
       const gk  = (ast.gene_keys      || {});
       const com = (ast.communication  || {});
 
-      const nv  = (x) => x && x.number !== undefined ? x.number : x;
-      const isM = (x) => [11,22,33].includes(nv(x));
-      const mk  = (x) => isM(x) ? " ✦" : "";
-      const p   = (s,n) => String(s||"").padEnd(n);
-      const pr  = (s,n) => String(s||"").padStart(n);
+      const nv = (x) => x && x.number !== undefined ? x.number : x;
+      const b  = (label, value) => `* ${label} - ${value}`;
 
-      // ── section text builders ────────────────────────────────────────────
+      // ── section text builders (all bullet points) ────────────────────────
 
       function buildBirth() {
         return [
-          `Name:          ${pro.name        || "—"}`,
-          `Birth Date:    ${pro.birth_date  || "—"}`,
-          `Birth Time:    ${pro.birth_time  || "—"}`,
-          `Birth Place:   ${pro.birth_place || "—"}`,
+          b("Name",        pro.name       || "—"),
+          b("Birth Date",  pro.birth_date || "—"),
+          b("Birth Time",  pro.birth_time || "—"),
+          b("Birth Place", pro.birth_place|| "—"),
         ].join("\n");
       }
 
       function buildNumerology() {
         const L = [];
-        const row = (lbl, x) => {
-          const val = nv(x); const sub = x && x.subtitle ? `  — ${x.subtitle}` : "";
-          return `${p(lbl,22)}${pr(val||"—",3)}${mk(x)}${sub}`;
-        };
-        L.push("── Core Identity ─────────────────────────────");
-        L.push(row("Life Path",          num.life_path));
-        L.push(row("Expression",         num.expression));
-        L.push(row("Soul Urge",          num.soul_urge));
-        L.push(row("Personality",        num.personality));
-        L.push("", "── Birth-Date Pillars ────────────────────────");
-        L.push(row("Attitude",           num.attitude));
-        L.push(row("Birthday",           num.birthday));
-        L.push(row("Generation",         num.generation));
-        L.push("", "── Derived Numbers ───────────────────────────");
-        L.push(row("Maturity",           num.maturity));
-        L.push(row("Balance",            num.balance));
-        L.push(row("Subconscious Self",  num.subconscious_self));
-        L.push("", "── Karmic Patterns ───────────────────────────");
+        const bv = (lbl, x) => b(lbl, nv(x) || "—");
+        L.push("[ Core Identity ]");
+        L.push(bv("Life Path",         num.life_path));
+        L.push(bv("Expression",        num.expression));
+        L.push(bv("Soul Urge",         num.soul_urge));
+        L.push(bv("Personality",       num.personality));
+        L.push("", "[ Birth-Date Pillars ]");
+        L.push(bv("Attitude",          num.attitude));
+        L.push(bv("Birthday",          num.birthday));
+        L.push(bv("Generation",        num.generation));
+        L.push("", "[ Derived Numbers ]");
+        L.push(bv("Maturity",          num.maturity));
+        L.push(bv("Balance",           num.balance));
+        L.push(bv("Subconscious Self", num.subconscious_self));
+        L.push("", "[ Karmic Patterns ]");
         const kd = num.karmic_debts; const kl = num.karmic_lessons;
-        L.push(`${"Karmic Debts".padEnd(22)} ${kd && kd.length ? kd.join(", ") : "None"}`);
-        L.push(`${"Karmic Lessons".padEnd(22)} ${kl && kl.length ? kl.join(", ") : "None"}`);
-        L.push("", "── Active Timing ─────────────────────────────");
-        L.push(row("Personal Year",  num.personal_year));
-        L.push(row("Personal Month", num.personal_month));
-        L.push(row("Personal Day",   num.personal_day));
-        L.push("", "── Life Cycles ───────────────────────────────");
-        if (num.pinnacles)  L.push(`Pinnacles:   ${num.pinnacles .map(nv).join("  ·  ")}`);
-        if (num.challenges) L.push(`Challenges:  ${num.challenges.map(nv).join("  ·  ")}`);
-        if (num.periods)    L.push(`Periods:     ${num.periods   .map(nv).join("  ·  ")}`);
+        L.push(b("Karmic Debts",   kd && kd.length ? kd.join(", ") : "None"));
+        L.push(b("Karmic Lessons", kl && kl.length ? kl.join(", ") : "None"));
+        L.push("", "[ Active Timing ]");
+        L.push(bv("Personal Year",  num.personal_year));
+        L.push(bv("Personal Month", num.personal_month));
+        L.push(bv("Personal Day",   num.personal_day));
+        L.push("", "[ Life Cycles ]");
+        if (num.pinnacles)  L.push(b("Pinnacles",  num.pinnacles .map(nv).join(" / ")));
+        if (num.challenges) L.push(b("Challenges", num.challenges.map(nv).join(" / ")));
+        if (num.periods)    L.push(b("Periods",    num.periods   .map(nv).join(" / ")));
         return L.join("\n");
       }
 
       function buildWestern() {
         if (!wst.planets) return "(Western astrology not calculated)";
         const L = [];
-        L.push("── Planets (Tropical) ──────────────────────────────────────────────────");
-        L.push(`${p("Body",15)} ${p("Sign",16)} ${p("Position",20)} Status`);
-        L.push("─".repeat(68));
+        L.push("[ Planets — Tropical ]");
         (wst.planets||[]).forEach(pl =>
-          L.push(`${p(pl.glyph+" "+pl.name,15)} ${p(pl.sign_glyph+" "+pl.sign,16)} ${p(pl.position,20)} ${pl.retrograde?"Retrograde ℞":"Direct"}`)
+          L.push(b(pl.name, `${pl.sign_glyph} ${pl.sign}  ${pl.position}  ${pl.retrograde ? "Retrograde ℞" : "Direct"}`))
         );
-        L.push("", "── Houses (Placidus) ───────────────────────────────────────────────────");
-        L.push(`${p("House",10)} ${p("Sign",16)} Position`);
-        L.push("─".repeat(52));
+        L.push("", "[ Houses — Placidus ]");
         (wst.houses||[]).forEach(h =>
-          L.push(`${p("House "+h.house,10)} ${p(h.sign_glyph+" "+h.sign,16)} ${h.position||""}`)
+          L.push(b(`House ${h.house}`, `${h.sign_glyph} ${h.sign}  ${h.position}`))
         );
-        L.push("", "── Angles ──────────────────────────────────────────────────────────────");
+        L.push("", "[ Angles ]");
         const ang = wst.angles || {};
-        if (ang.ascendant)  L.push(`ASC (Ascendant):   ${ang.ascendant.sign_glyph} ${ang.ascendant.sign}  —  ${ang.ascendant.position}`);
-        if (ang.midheaven)  L.push(`MC  (Midheaven):   ${ang.midheaven.sign_glyph} ${ang.midheaven.sign}  —  ${ang.midheaven.position}`);
-        if (ang.descendant) L.push(`DSC (Descendant):  ${ang.descendant.sign_glyph} ${ang.descendant.sign}  —  ${ang.descendant.position}`);
-        if (ang.imum_coeli) L.push(`IC  (Imum Coeli):  ${ang.imum_coeli.sign_glyph} ${ang.imum_coeli.sign}  —  ${ang.imum_coeli.position}`);
+        if (ang.ascendant)  L.push(b("Ascendant (ASC)", `${ang.ascendant.sign_glyph} ${ang.ascendant.sign}  ${ang.ascendant.position}`));
+        if (ang.midheaven)  L.push(b("Midheaven (MC)",  `${ang.midheaven.sign_glyph} ${ang.midheaven.sign}  ${ang.midheaven.position}`));
+        if (ang.descendant) L.push(b("Descendant (DSC)",`${ang.descendant.sign_glyph} ${ang.descendant.sign}  ${ang.descendant.position}`));
+        if (ang.imum_coeli) L.push(b("Imum Coeli (IC)", `${ang.imum_coeli.sign_glyph} ${ang.imum_coeli.sign}  ${ang.imum_coeli.position}`));
         return L.join("\n");
       }
 
       function buildVedic() {
         if (!ved.grahas) return "(Vedic astrology not calculated)";
         const L = [];
-        if (ved.lagna) L.push(`Lagna (Ascendant):  ${ved.lagna.rashi} (${ved.lagna.sign})  —  ${ved.lagna.position}`);
-        if (ved.ayanamsa_dms) L.push(`Ayanamsa (${ved.ayanamsa_name||"Lahiri"}):  ${ved.ayanamsa_dms}`);
-        L.push("", "── Grahas (Sidereal) ────────────────────────────────────────────────────────────────────");
-        L.push(`${p("Body",14)} ${p("Rashi",18)} ${p("Position",16)} ${p("Nakshatra",16)} ${p("Lord",8)} Pada  Status`);
-        L.push("─".repeat(90));
+        L.push("[ Chart Overview ]");
+        if (ved.lagna)        L.push(b("Lagna (Ascendant)", `${ved.lagna.rashi} (${ved.lagna.sign})  ${ved.lagna.position}`));
+        if (ved.ayanamsa_dms) L.push(b(`Ayanamsa (${ved.ayanamsa_name||"Lahiri"})`, ved.ayanamsa_dms));
+        if (ved.starting_mahadasha) L.push(b("Starting Mahadasha", ved.starting_mahadasha));
+        L.push("", "[ Grahas — Sidereal ]");
         (ved.grahas||[]).forEach(g =>
-          L.push(`${p(g.glyph+" "+g.name,14)} ${p((g.rashi||"")+" ("+(g.sign||"")+")",18)} ${p(g.position||"",16)} ${p(g.nakshatra||"—",16)} ${p(g.nakshatra_lord||"—",8)} ${g.pada||"—"}     ${g.retrograde?"Retrograde ℞":"Direct"}`)
+          L.push(b(g.name, `${g.rashi} (${g.sign})  ${g.position}  ${g.nakshatra} · Pada ${g.pada} · Lord ${g.nakshatra_lord}  ${g.retrograde ? "Retrograde ℞" : "Direct"}`))
         );
-        if (ved.starting_mahadasha) { L.push("", `Starting Mahadasha:  ${ved.starting_mahadasha}`); }
         return L.join("\n");
       }
 
       function buildHumanDesign() {
         const L = [];
-        L.push(`Type:               ${hd.type             || "—"}`);
-        L.push(`Authority:          ${hd.authority        || "—"}`);
-        L.push(`Profile:            ${hd.profile          || "—"}`);
-        L.push(`Definition:         ${hd.definition       || "—"}`);
-        L.push(`Strategy:           ${hd.strategy         || "—"}`);
-        if (hd.not_self_theme)    L.push(`Not-Self Theme:     ${hd.not_self_theme}`);
-        if (hd.incarnation_cross) L.push(`Incarnation Cross:  ${hd.incarnation_cross}`);
-        L.push("", `Defined Centers:  ${(hd.defined_centers||[]).join("  ·  ") || "None"}`);
-        L.push(`Open Centers:     ${(hd.open_centers  ||[]).join("  ·  ") || "None"}`);
+        L.push("[ Core ]");
+        L.push(b("Type",       hd.type      || "—"));
+        L.push(b("Authority",  hd.authority || "—"));
+        L.push(b("Profile",    hd.profile   || "—"));
+        L.push(b("Definition", hd.definition|| "—"));
+        L.push(b("Strategy",   hd.strategy  || "—"));
+        if (hd.not_self_theme)    L.push(b("Not-Self Theme",    hd.not_self_theme));
+        if (hd.incarnation_cross) L.push(b("Incarnation Cross", hd.incarnation_cross));
+        L.push("", "[ Centers ]");
+        (hd.defined_centers||[]).forEach(c => L.push(b(c, "Defined")));
+        (hd.open_centers  ||[]).forEach(c => L.push(b(c, "Open")));
         if ((hd.channels||[]).length) {
-          L.push("", "── Channels ──────────────────────────────────────────────");
-          hd.channels.forEach(ch => L.push(`  ${p(ch.label,22)} ${(ch.centers||[]).join(" ↔ ")}`));
+          L.push("", "[ Channels ]");
+          hd.channels.forEach(ch => L.push(b(ch.label, (ch.centers||[]).join(" ↔ "))));
         }
         const printActs = (title, acts) => {
           if (!acts || !acts.length) return;
-          L.push("", `── ${title} ─────────────────────────────────────`);
-          L.push(`${p("Body",16)} ${p("Gate.Line",12)} ${p("Hexagram Name",30)} Zodiac`);
-          L.push("─".repeat(78));
-          acts.forEach(a => L.push(`${p((a.glyph||"")+" "+(a.body||""),16)} ${p(a.notation||"",12)} ${p(a.gate_name||"—",30)} ${a.zodiac||""}`));
+          L.push("", `[ ${title} ]`);
+          acts.forEach(a => L.push(b(`${a.body} — Gate ${a.notation}`, `${a.gate_name}  ${a.zodiac}`)));
         };
-        printActs("Personality Activations (Conscious — Red)",  (hd.personality||{}).activations);
-        printActs("Design Activations (Unconscious — Black)",   (hd.design     ||{}).activations);
-        if ((hd.design||{}).moment_utc) { L.push("", `Design Moment (UTC):  ${hd.design.moment_utc}`); }
+        printActs("Personality Activations (Conscious)",  (hd.personality||{}).activations);
+        printActs("Design Activations (Unconscious)",     (hd.design     ||{}).activations);
+        if ((hd.design||{}).moment_utc) { L.push("", b("Design Moment (UTC)", hd.design.moment_utc)); }
         return L.join("\n");
       }
 
@@ -1260,52 +1249,56 @@
         const L = [];
         const seq = gk.activation_sequence || [];
         if (seq.length) {
-          L.push("── Hologenetic Profile (Activation Sequence) ──────────────────────────────────────────────");
-          L.push(`${p("Sphere",22)} ${p("Gate.Line",10)} ${p("Name",24)} ${p("Shadow",20)} ${p("Gift",20)} Siddhi`);
-          L.push("─".repeat(105));
-          seq.forEach(s => L.push(`${p(s.sphere||"—",22)} ${p(s.notation||"",10)} ${p(s.name||"—",24)} ${p(s.shadow||"—",20)} ${p(s.gift||"—",20)} ${s.siddhi||"—"}`));
+          L.push("[ Hologenetic Profile — Activation Sequence ]");
+          seq.forEach(s => {
+            L.push(b(s.sphere, `Gate ${s.notation} · ${s.name}`));
+            L.push(`  Shadow: ${s.shadow}  |  Gift: ${s.gift}  |  Siddhi: ${s.siddhi}`);
+          });
         }
         const allKeys = gk.all_keys || [];
         if (allKeys.length) {
-          L.push("", "── All Activated Gene Keys ─────────────────────────────────────────────────────────────────");
-          L.push(`${p("Gate",6)} ${p("Name",24)} ${p("Shadow",20)} ${p("Gift",20)} ${p("Siddhi",20)} Sources`);
-          L.push("─".repeat(105));
-          allKeys.forEach(k => L.push(`${p(k.gene_key||"",6)} ${p(k.name||"—",24)} ${p(k.shadow||"—",20)} ${p(k.gift||"—",20)} ${p(k.siddhi||"—",20)} ${(k.sources||[]).join(", ")}`));
+          L.push("", "[ All Activated Gene Keys ]");
+          allKeys.forEach(k => {
+            L.push(b(`Gene Key ${k.gene_key}`, k.name));
+            L.push(`  Shadow: ${k.shadow}  |  Gift: ${k.gift}  |  Siddhi: ${k.siddhi}`);
+            if ((k.sources||[]).length) L.push(`  Sources: ${k.sources.join(", ")}`);
+          });
         }
         return L.join("\n");
       }
 
       function buildCommunication() {
         const L = [];
-        L.push(`Archetype:         ${com.archetype||"—"}`);
-        L.push("", `Summary:\n${com.summary||"—"}`);
-        L.push("", `Processing Style:\n${com.processing_style||"—"}`);
+        L.push("[ Profile ]");
+        L.push(b("Archetype",        com.archetype        || "—"));
+        L.push(b("Summary",          com.summary          || "—"));
+        L.push(b("Processing Style", com.processing_style || "—"));
         if (com.delivery) {
-          L.push("", "── Delivery Preferences ─────────────────────────────────────────────");
-          L.push(`Tone:    ${com.delivery.tone  ||"—"}`);
-          L.push(`Format:  ${com.delivery.format||"—"}`);
-          L.push(`Pacing:  ${com.delivery.pacing||"—"}`);
-          L.push(`Avoid:   ${com.delivery.avoid ||"—"}`);
+          L.push("", "[ Delivery Preferences ]");
+          L.push(b("Tone",   com.delivery.tone  || "—"));
+          L.push(b("Format", com.delivery.format|| "—"));
+          L.push(b("Pacing", com.delivery.pacing|| "—"));
+          L.push(b("Avoid",  com.delivery.avoid || "—"));
         }
         if ((com.strengths||[]).length) {
-          L.push("", "── Cognitive Strengths ─────────────────────────────────────────────");
-          com.strengths.forEach((s,i) => { L.push(`${i+1}. ${s.strength}`); L.push(`   Source: ${s.source}`); });
+          L.push("", "[ Cognitive Strengths ]");
+          com.strengths.forEach(s => {
+            L.push(b(s.strength, s.source));
+          });
         }
         if ((com.key_indicators||[]).length) {
-          L.push("", "── Key Indicators ──────────────────────────────────────────────────────────────────");
-          L.push(`${p("System",18)} ${p("Indicator",32)} Implication`);
-          L.push("─".repeat(85));
-          com.key_indicators.forEach(ind => L.push(`${p(ind.system||"",18)} ${p(ind.indicator||"",32)} ${ind.implication||""}`));
+          L.push("", "[ Key Indicators ]");
+          com.key_indicators.forEach(ind => L.push(b(`${ind.system} — ${ind.indicator}`, ind.implication)));
         }
         return L.join("\n");
       }
 
       function buildSynthesis() {
         const L = [];
-        if (syn.paragraph) { L.push(syn.paragraph); L.push(""); }
+        if (syn.paragraph) L.push(syn.paragraph, "");
         if ((syn.archetypes||[]).length) {
-          L.push("── Archetypes ───────────────────────────────────────────────────────");
-          syn.archetypes.forEach(a => L.push(`  ${p(a.label+":",16)} ${a.value}${a.detail ? "  —  "+a.detail : ""}`));
+          L.push("[ Archetypes ]");
+          syn.archetypes.forEach(a => L.push(b(a.label, `${a.value}${a.detail ? "  —  " + a.detail : ""}`)));
         }
         return L.join("\n");
       }

@@ -427,9 +427,13 @@
         </div>`;
     }
 
-    function listBadges(label, arr, color = "text-violet2-soft") {
+    function listBadges(label, arr, color = "text-violet2-soft", detailType = null) {
       const items = arr && arr.length
-        ? arr.map(v => `<span class="rounded-full border border-violet2/30 bg-violet2/10 px-2.5 py-0.5 text-xs font-mono ${color}">${v}</span>`).join(" ")
+        ? arr.map(v => {
+            const didAttr = detailType ? _da({type: detailType, value: v, _title: `${label.replace(/s$/, "")} ${v}`, _subtitle: label}) : "";
+            const clickable = detailType ? "cursor-pointer hover:border-gold/50" : "";
+            return `<span ${didAttr} class="rounded-full border border-violet2/30 bg-violet2/10 px-2.5 py-0.5 text-xs font-mono ${color} ${clickable} transition"${detailType ? ' title="Click to learn more"' : ""}>${v}</span>`;
+          }).join(" ")
         : `<span class="text-xs text-slate-500">None</span>`;
       return `
         <div class="rounded-xl card-metal p-4">
@@ -459,8 +463,13 @@
       const coreKeys = ["life_path","expression","soul_urge","personality"];
       const coreCards = coreKeys.map(key => {
         const r = d[key]; const arch = ARCHETYPES[r.number] || "";
+        const didAttr = _da({
+          type: "numerology_core", field: key, label: NUM_SUBTITLES[key].split("—")[0].trim(),
+          field_definition: NUM_SUBTITLES[key], number: r.number, reduction: r.reduction,
+          _title: NUM_SUBTITLES[key].split("—")[0].trim(), _subtitle: `Number ${r.number}${arch ? " · " + arch : ""}`,
+        });
         return `
-          <article class="${r.is_master ? "card-metal-gold" : "card-metal"} rounded-2xl p-6">
+          <article ${didAttr} class="${r.is_master ? "card-metal-gold" : "card-metal"} rounded-2xl p-6 cursor-pointer hover:border-gold/50 transition" title="Click to learn more">
             <header class="flex items-start justify-between gap-3">
               <div><h3 class="font-display text-base tracking-wide text-gold-soft">${NUM_SUBTITLES[key].split("—")[0].trim()}${masterBadge(r)}</h3>
               <p class="mt-1 text-xs text-slate-400">${NUM_SUBTITLES[key]}</p></div>
@@ -471,6 +480,7 @@
               <p class="text-[11px] uppercase tracking-wider text-slate-500">Reduction</p>
               <p class="font-mono text-sm text-violet2-soft">${r.reduction}</p>
             </div>
+            <p class="mt-3 text-[9px] text-slate-600 uppercase tracking-wider">↑ tap for more</p>
           </article>`;
       }).join("");
 
@@ -507,8 +517,8 @@
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Karmic Patterns</h3>
           <p class="mt-1 text-xs text-slate-400">Frequencies requiring conscious cultivation or reckoning in this lifetime.</p>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            ${listBadges("Karmic Debt Numbers", d.karmic_debts, "text-red-400")}
-            ${listBadges("Karmic Lesson Numbers", d.karmic_lessons, "text-amber-400")}
+            ${listBadges("Karmic Debt Numbers", d.karmic_debts, "text-red-400", "karmic_debt")}
+            ${listBadges("Karmic Lesson Numbers", d.karmic_lessons, "text-amber-400", "karmic_lesson")}
           </div>
         </div>`;
 
@@ -779,13 +789,28 @@
             </span>`).join("")
         : `<span class="text-sm text-slate-500">No fully defined channels.</span>`;
 
+      // Type / Authority / Profile / Definition — each clickable with a technical
+      // explanation and a plain-language "what this means for you" explanation.
+      const authorityBase = hd.authority.split(" (")[0];
+      const definitionBase = hd.definition.replace(" Definition", "");
+      const hdStat = (label, value, sub, gold, detailType, lookupKey) => {
+        const desc = { hd_type: HD_TYPE_DESC, hd_authority: HD_AUTHORITY_DESC, hd_profile: HD_PROFILE_DESC, hd_definition: HD_DEFINITION_DESC }[detailType]?.[lookupKey];
+        const didAttr = _da({type: detailType, label, value: lookupKey, technical: desc?.technical || "", plain: desc?.plain || "", _title: label, _subtitle: value});
+        return `
+          <div ${didAttr} class="${gold ? "card-metal-gold" : "card-metal"} rounded-2xl p-5 text-center cursor-pointer hover:border-gold/60 transition" title="Click to learn what this means for you">
+            <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${label}</p>
+            <div class="mt-2 font-display text-2xl gold-text">${value}</div>
+            <p class="mt-1.5 text-xs text-slate-400">${sub}</p>
+            <p class="mt-2 text-[10px] text-slate-600 uppercase tracking-wider">↑ what this means for you</p>
+          </div>`;
+      };
       container.innerHTML =
         contextBanner(astro) +
         `<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-           ${statCard("Type", hd.type, `Strategy: ${hd.strategy}`, true, "hd_type")}
-           ${statCard("Authority", hd.authority.split(" (")[0], hd.authority.includes("(") ? hd.authority.split(" (")[1].replace(")", "") : "inner compass", false, "authority")}
-           ${statCard("Profile", hd.profile, hd.profile_label, false, "profile")}
-           ${statCard("Definition", hd.definition.replace(" Definition", ""), `Signature: ${hd.signature} · Not-self: ${hd.not_self}`)}
+           ${hdStat("Type", hd.type, `Strategy: ${hd.strategy}`, true, "hd_type", hd.type)}
+           ${hdStat("Authority", authorityBase, hd.authority.includes("(") ? hd.authority.split(" (")[1].replace(")", "") : "inner compass", false, "hd_authority", authorityBase)}
+           ${hdStat("Profile", hd.profile, hd.profile_label, false, "hd_profile", hd.profile)}
+           ${hdStat("Definition", definitionBase, `Signature: ${hd.signature} · Not-self: ${hd.not_self}`, false, "hd_definition", definitionBase)}
          </div>` +
         `<div class="card-metal rounded-2xl p-6">
            <h3 class="font-display text-lg tracking-wide text-gold-soft">Centers</h3>
@@ -1735,6 +1760,48 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       "47-64":"Abstraction (Mental Activity/Clarity). Making meaning from confused life experiences — the mental storyteller.",
     };
 
+    const HD_TYPE_DESC = {
+      Projector: {technical:"~20% of the population. No consistent access to sustainable life-force energy (Sacral undefined) — built to guide and direct others' energy rather than generate their own.", plain:"You're not built to force your way through things by sheer output. Your gift is seeing other people and systems clearly and directing them well, but it only lands correctly when someone actually invites you in first."},
+      Generator: {technical:"~37% of the population. Defined Sacral center gives consistent, sustainable, regenerating life-force energy accessed through responding rather than initiating.", plain:"You have real, steady energy for work you actually enjoy. The catch is that energy runs best when you're responding to something in front of you, not when you're forcing yourself to initiate from a standing start."},
+      "Manifesting Generator": {technical:"~33% of the population. Same defined-Sacral mechanics as Generator, with added multi-tracking speed — the design can skip steps that don't apply.", plain:"You have the same steady gut energy as a Generator, but you move faster and can jump between things at once. The tension is that skipping unnecessary steps looks like inconsistency to others, even when your process is genuinely working for you."},
+      Manifestor: {technical:"~9% of the population. No consistent Sacral access; energy comes in bursts, built to initiate unilaterally rather than wait for response conditions.", plain:"You're built to act on your own initiative rather than wait for permission or an invitation. The friction shows up when people expect you to explain or check in before you move — your design doesn't actually require that."},
+      Reflector: {technical:"<1% of the population. No defined centers at all — every center is open, so the entire design is a mirror and sampling mechanism for its environment.", plain:"You don't have a fixed internal energy type the way everyone else does — you're built to sample and reflect the environment you're in. This means the people and places around you genuinely change how you feel and function, which isn't a flaw, it's the actual design."},
+    };
+
+    const HD_AUTHORITY_DESC = {
+      Emotional: {technical:"Solar Plexus is defined. No decision made in the emotional 'now' is reliable — clarity only exists after a full wave of highs and lows has passed.", plain:"Whatever you feel about a decision right this second isn't the final answer. Give it time to settle through a few emotional ups and downs before you commit to anything significant."},
+      Sacral: {technical:"Sacral is defined with no Solar Plexus definition. A reliable, repeatable gut yes/no response, available in the moment and generally accurate.", plain:"Your gut has a real, dependable yes-or-no reaction you can trust when something's actually in front of you. It doesn't work well for hypotheticals — it needs something real to respond to."},
+      Splenic: {technical:"Spleen is defined with no Sacral or Solar Plexus definition. Real-time survival instinct with no memory trail — the signal doesn't repeat itself.", plain:"Your instinct is accurate the moment it arrives, but it only speaks once and quietly. If you talk yourself out of it or wait too long, it doesn't come back to argue its case a second time."},
+      Ego: {technical:"Heart/Ego center defined and connected to the Throat, with no Sacral, Solar Plexus, or Spleen authority available. Willpower-based, tied to genuine desire rather than obligation.", plain:"Your steadiest decisions come from what you genuinely want to commit to, not what you feel obligated to do. If the will isn't really there, forcing it tends to backfire."},
+      "Self-Projected": {technical:"G center connected to the Throat with no other authority defined. Clarity arrives through the act of speaking out loud, not through internal reflection alone.", plain:"You often don't actually know what you think or feel about something until you hear yourself say it out loud to another person. That's not indecisiveness — it's how your clarity is built to work."},
+      "Mental/Environment": {technical:"No defined center provides inner authority at all (a rare Projector configuration) — the only reliable authority is external, drawn from a trusted sounding board and the right environment.", plain:"You genuinely don't have an internal gut-check to lean on the way most people do. Talking it through out loud with someone you trust, in the right setting, is not a weakness — it's the actual mechanism your design uses to reach clarity."},
+      Lunar: {technical:"Reflector authority — no defined centers at all, so clarity requires sampling the full ~29.5-day lunar cycle before a decision is reliable.", plain:"Nothing about your decisions is reliable on a same-day or same-week basis. Genuinely major choices need close to a full month, living with the question through different lunar phases, before the answer is trustworthy."},
+    };
+
+    // Odd lines (1,3,5) = independent/personal orientation. Even lines (2,4,6) = relational/collective orientation.
+    const HD_PROFILE_DESC = {
+      "1/3": {technical:"Line 1 (Investigator) + Line 3 (Martyr). Both personal-oriented lines — foundation built through independent research, then tested and refined through direct trial and error.", plain:"You build competence by researching things thoroughly on your own, then actually trying them out and learning from what doesn't work. Both halves of this profile are personal — you don't need a group's approval to trust what you've learned."},
+      "1/4": {technical:"Line 1 (Investigator) + Line 4 (Opportunist). Personal foundation-building paired with a fixed network of close relationships that opportunities travel through.", plain:"You like to actually understand something deeply before committing to it, and the opportunities that matter most tend to arrive through a small, steady circle of people you already know well."},
+      "2/4": {technical:"Line 2 (Hermit) + Line 4 (Opportunist). Both relational lines — natural, private talent that needs to be called out by trusted friends before it's shared.", plain:"You have a real natural gift, but you're not naturally inclined to push it forward yourself. It tends to show up when people who already know and trust you specifically call on it."},
+      "2/5": {technical:"Line 2 (Hermit) + Line 5 (Heretic). Private natural talent combined with a public projection field — others assign you a fix-it role whether or not you sought it.", plain:"You'd honestly rather be left alone with your natural talent, but people tend to project expectations onto you and pull you in to solve things, whether you signed up for that role or not."},
+      "3/5": {technical:"Line 3 (Martyr) + Line 5 (Heretic). Learning through direct trial and error, then projected upon as the practical solution to other people's problems.", plain:"You learn by doing and making mistakes along the way, and somewhere along the line other people start looking to you as the person with the practical answer, sometimes before you feel ready for that."},
+      "3/6": {technical:"Line 3 (Martyr) + Line 6 (Role Model). Early trial-and-error experimentation that matures, typically after age ~30, into a widely observed role-model phase.", plain:"Early in life you learn mostly by direct experience and mistakes. Over time, especially after your early thirties, you settle into being someone other people watch and learn from."},
+      "4/6": {technical:"Line 4 (Opportunist) + Line 6 (Role Model). Stable network of close relationships that matures into a role-model, observer phase later in life.", plain:"You lean on a close circle of relationships to be effective, and as you get older you naturally settle into being someone others look up to and model themselves after."},
+      "4/1": {technical:"Line 4 (Opportunist) + Line 1 (Investigator). Network-dependent expression built on a genuinely researched, independent foundation.", plain:"You rely on close relationships to be effective in the world, but what you actually bring to those relationships is built on real, independent groundwork you did yourself."},
+      "5/1": {technical:"Line 5 (Heretic) + Line 1 (Investigator). Both odd, personal-oriented lines — practical, projected-upon problem-solving grounded in genuinely independent investigation.", plain:"People tend to project expectations onto you and look to you for practical solutions, but underneath that role is someone who actually did the independent homework rather than winging it."},
+      "5/2": {technical:"Line 5 (Heretic) + Line 2 (Hermit). Practical fixer role projected from outside, sitting on top of a natural, private talent that would rather not be disturbed.", plain:"You get pulled into fixing things for other people, even though at heart you'd really rather be left alone with your natural gift."},
+      "6/2": {technical:"Line 6 (Role Model) + Line 2 (Hermit). Role-model maturity built on a natural, private talent, typically shifting into that visible role after the third life phase.", plain:"You become someone others look to as an example once trust is established, but underneath, you're naturally more private and comfortable with your own space than the public role suggests."},
+      "6/3": {technical:"Line 6 (Role Model) + Line 3 (Martyr). Role-model maturity reached only after direct, hands-on trial-and-error experience.", plain:"You become someone others look up to as an example, but only after genuinely learning things the hard way yourself first, not from theory."},
+    };
+
+    const HD_DEFINITION_DESC = {
+      Single: {technical:"All defined centers connect into one continuous circuit with no gaps or bridges required. Energy moves consistently through the whole system without needing another person to complete it.", plain:"Your energy runs as one connected, self-contained system. You don't need someone else in the room for your own defined traits to make sense or function correctly."},
+      Split: {technical:"Defined centers form two separate connected groups, unconnected to each other except through undefined centers or by an outside person bridging the gap.", plain:"Part of your energy runs as one circuit, part runs as another, and the two don't fully talk to each other on their own. You may notice you feel most complete or 'switched on' around specific people who happen to bridge that gap."},
+      "Triple Split": {technical:"Defined centers form three separate connected groups, requiring more external bridging (via other people or transits) than a Split Definition to feel fully connected.", plain:"Your energy runs in three separate, disconnected pieces. You may feel like different, fairly distinct versions of yourself depending on who's around, since it often takes an outside person to bridge across all three."},
+      "Quadruple Split": {technical:"Defined centers form four separate connected groups — the rarest and most fragmented definition type, requiring the most external bridging to feel fully connected.", plain:"Your energy is split across four separate, disconnected areas — the most fragmented version of this pattern. Feeling fully 'switched on' often depends heavily on who else is in the room."},
+      "No Definition": {technical:"No two centers are connected at all (Reflector only) — every center is open, so there is no fixed internal circuitry, only what's sampled from the environment.", plain:"You don't have any fixed, always-on internal circuitry the way everyone else does. What you're experiencing at any given moment is genuinely being shaped by whoever and whatever is around you."},
+    };
+
     const NUM_MEANINGS = {
       1:{keywords:"Leadership, independence, originality, pioneering courage",shadow:"Stubbornness, isolation, need to control, domination",gift:"The pioneer who carves new paths without a map. Self-reliant, original, and willing to stand alone."},
       2:{keywords:"Partnership, sensitivity, diplomacy, intuition, cooperation",shadow:"Over-dependence, over-sensitivity, indecision, manipulation",gift:"The diplomat who bridges worlds through patience and listening. Masters the subtle power of relationship and emotional intelligence."},
@@ -1748,6 +1815,30 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       11:{keywords:"Intuition, illumination, inspiration, spiritual vision, sensitivity",shadow:"Nervous tension, impracticality, over-idealism, anxiety",gift:"The master illuminator — a living bridge between the material and spiritual, here to inspire through direct knowing."},
       22:{keywords:"Master builder, large-scale vision, practical idealism, legacy",shadow:"Overwhelm, impracticality, fear of one's own power, avoidance",gift:"The master builder — the most powerful number. Capable of manifesting great visions that serve humanity at scale."},
       33:{keywords:"Master teacher, universal service, selfless compassion, healing",shadow:"Martyrdom, co-dependence, self-sacrifice, savior complex",gift:"The master teacher — the rarest vibration. Living in pure, unconditional service to elevate collective consciousness."},
+    };
+
+    // Karmic Debt numbers (13, 14, 16, 19) — the raw pre-reduction value in a core
+    // number's calculation, flagging a specific pattern to work through this lifetime.
+    const KARMIC_DEBT_MEANINGS = {
+      13:{technical:"13 reduces to 4, but as a karmic debt it carries the unreduced weight of past avoidance of disciplined effort.",plain:"This flags a pattern of having avoided steady, disciplined work in the past — the lesson this time is that consistent effort actually pays off, and shortcuts tend to collapse."},
+      14:{technical:"14 reduces to 5, but as a karmic debt it carries the unreduced weight of past misuse of freedom.",plain:"This flags a past pattern of excess or escaping responsibility through constant change — the lesson this time is building genuine self-discipline around freedom, not avoiding commitment."},
+      16:{technical:"16 reduces to 7, but as a karmic debt it carries the unreduced weight of past ego-driven relationship harm.",plain:"This flags a pattern connected to pride or ego causing real damage to a close relationship in the past — the lesson this time often arrives as a sudden, humbling disruption that rebuilds identity on more honest ground."},
+      19:{technical:"19 reduces to 1, but as a karmic debt it carries the unreduced weight of past abuse of power or excessive self-focus.",plain:"This flags a pattern of leaning too hard on others or on personal power in the past — the lesson this time is learning genuine self-reliance without leaning on manipulation or favors."},
+    };
+
+    // Karmic Lesson numbers — digits (1-9) missing entirely from the letters of the
+    // full birth name, flagging a capacity that has to be learned through direct
+    // life experience rather than one that came naturally from day one.
+    const KARMIC_LESSON_MEANINGS = {
+      1:{technical:"Missing 1 in the name chart suggests independent initiative and self-directed leadership are undeveloped by default.",plain:"Leading from the front and trusting his own judgment without checking with everyone first is something he's had to build through experience, not something automatic."},
+      2:{technical:"Missing 2 in the name chart suggests patience, tact, and cooperative give-and-take are undeveloped by default.",plain:"Working patiently alongside others without needing to be right or first is a skill he's had to develop deliberately."},
+      3:{technical:"Missing 3 in the name chart suggests creative self-expression and lightness are undeveloped by default.",plain:"Expressing himself openly and not taking everything so seriously is something that's had to be learned rather than coming naturally."},
+      4:{technical:"Missing 4 in the name chart suggests structured discipline and methodical follow-through are undeveloped by default.",plain:"Steady, organized, step-by-step follow-through is something this person has had to learn the hard way through life circumstances, not something that came naturally from day one."},
+      5:{technical:"Missing 5 in the name chart suggests adaptability and comfort with change are undeveloped by default.",plain:"Rolling with unexpected change instead of resisting it is a capacity he's had to build deliberately."},
+      6:{technical:"Missing 6 in the name chart suggests responsibility for others and domestic balance are undeveloped by default.",plain:"Showing up reliably for family or close commitments is something he's had to learn is genuinely worth the effort."},
+      7:{technical:"Missing 7 in the name chart suggests introspection and trust in inner analysis are undeveloped by default.",plain:"Slowing down to actually think something through alone, rather than acting on the surface read, is a skill built over time rather than a given."},
+      8:{technical:"Missing 8 in the name chart suggests comfort with material power and authority is undeveloped by default.",plain:"Feeling at ease handling money, authority, or being in charge is something he's had to grow into rather than something that came easily."},
+      9:{technical:"Missing 9 in the name chart suggests compassion beyond immediate self-interest is undeveloped by default.",plain:"Genuinely caring about outcomes that don't benefit him directly is a capacity he's had to develop rather than one he started with."},
     };
 
     function buildDataDetailHtml(obj) {
@@ -1832,6 +1923,17 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
           </div>`;
       }
 
+      if (type === "hd_type" || type === "hd_authority" || type === "hd_profile" || type === "hd_definition") {
+        const { label, value, technical, plain } = obj;
+        const labelMap = { hd_type: "Type", hd_authority: "Authority", hd_profile: "Profile", hd_definition: "Definition" };
+        return `<div class="mb-5"><p class="text-xs text-violet2-soft uppercase tracking-wider">${labelMap[type]}</p>
+          <h3 class="font-display text-2xl gold-text mt-1">${value}</h3></div>
+          <div class="space-y-3">
+            ${goldSec("Technically, what this means", technical || "No technical description available for this value.")}
+            ${greenSec("In plain terms", plain || "No plain-language description available for this value.")}
+          </div>`;
+      }
+
       if (type === "hd_channel") {
         const { label, centers } = obj;
         const gates = label.replace(/Gate\s*/gi,"").split(/\s*[–\-]\s*/).map(s=>s.trim());
@@ -1896,6 +1998,47 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
           ${greenSec("The gift", nm.gift)}
           ${greySec("The shadow", nm.shadow)}
         </div>`:""}`;
+      }
+
+      if (type === "numerology_core") {
+        const { field, field_definition, number, reduction } = obj;
+        const nm = NUM_MEANINGS[number];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500">${(field||"").replace(/_/g," ")}</p>
+          <div class="mt-3 font-display text-6xl gold-text">${number??"—"}</div>
+          <p class="mt-2 font-mono text-xs text-violet2-soft">${reduction||""}</p>
+        </div>
+        <div class="space-y-3">
+          ${goldSec("What this number is", field_definition||"")}
+          ${nm ? greenSec("The gift", nm.gift) : ""}
+          ${nm ? greySec("The shadow", nm.shadow) : ""}
+        </div>`;
+      }
+
+      if (type === "karmic_debt") {
+        const { value } = obj;
+        const kd = KARMIC_DEBT_MEANINGS[value];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-red-400">Karmic Debt</p>
+          <div class="mt-3 font-display text-6xl gold-text">${value}</div>
+        </div>
+        <div class="space-y-3">
+          ${goldSec("Technically, what this means", kd?.technical || "This karmic debt number is not yet in the reference table.")}
+          ${greenSec("In plain terms", kd?.plain || "")}
+        </div>`;
+      }
+
+      if (type === "karmic_lesson") {
+        const { value } = obj;
+        const kl = KARMIC_LESSON_MEANINGS[value];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-amber-400">Karmic Lesson</p>
+          <div class="mt-3 font-display text-6xl gold-text">${value}</div>
+        </div>
+        <div class="space-y-3">
+          ${goldSec("Technically, what this means", kl?.technical || "This karmic lesson number is not yet in the reference table.")}
+          ${greenSec("In plain terms", kl?.plain || "")}
+        </div>`;
       }
 
       if (type === "comm_delivery") {

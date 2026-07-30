@@ -286,7 +286,67 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
             ),
         })
 
-    weaknesses = weakness_pool[:3] if weakness_pool else [
+    if "Root" in open_centers:
+        weakness_pool.append({
+            "weakness": "Adrenalized Urgency Mistaken for Real Pressure",
+            "source": (
+                f"Open Root + {hd_type}: environmental time-pressure and stress get absorbed and amplified — "
+                f"deadlines and urgency that belong to other people or the room can register as your own, "
+                f"pushing decisions faster than the design actually needs"
+            ),
+        })
+
+    if "Spleen" in open_centers:
+        weakness_pool.append({
+            "weakness": "Fear Absorbed as Instinct",
+            "source": (
+                f"Open Spleen + {hd_type}: other people's fears, health anxieties, and survival-level worries "
+                f"are picked up and can read as your own instinctive caution — the tell is whether the fear "
+                f"has a specific, present-tense source or is ambient and hard to pin down"
+            ),
+        })
+
+    if "G" in open_centers:
+        if life_path in (11, 22, 33):
+            weakness_pool.append({
+                "weakness": "Identity Instability Under a Heightened Signal",
+                "source": (
+                    f"Open G + Life Path {life_path}: master number carriers already run an elevated, "
+                    f"visible frequency — the open G means direction and self-concept shift with whoever "
+                    f"and wherever you are, so the vision can feel unstable in its container even when it's genuine"
+                ),
+            })
+        else:
+            weakness_pool.append({
+                "weakness": "Direction Borrowed From Whoever's in the Room",
+                "source": (
+                    f"Open G + {hd_type}: sense of identity and life direction is environment-dependent — "
+                    f"conviction that feels solid in one setting can dissolve entirely in another, "
+                    f"making consistent long-term direction genuinely harder to hold onto alone"
+                ),
+            })
+
+    if "Heart" in open_centers:
+        weakness_pool.append({
+            "weakness": "Overcommitting to Prove Worth",
+            "source": (
+                f"Open Heart + {hd_type}: willpower and self-worth get referenced externally — the open Heart "
+                f"can drive over-promising or overworking to earn value that was never actually in question, "
+                f"then resentment when the effort goes unacknowledged"
+            ),
+        })
+
+    if 2 in profile_lines and "Throat" in defined_centers:
+        weakness_pool.append({
+            "weakness": "Called Out of Natural Hermit Rhythm",
+            "source": (
+                f"Profile {profile} line 2 (Hermit) with a defined Throat: the natural talent needs private "
+                f"incubation time, but the defined Throat makes expression reliable and visible — others call "
+                f"on you for that visible talent faster and more often than the line 2 rhythm actually wants"
+            ),
+        })
+
+    weaknesses = weakness_pool[:5] if weakness_pool else [
         {"weakness": "No dominant conditioning vulnerabilities identified",
          "source": "Current configuration shows balanced open-center awareness across the profile"}
     ]
@@ -320,12 +380,14 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
         {"strength": strength_descriptions[k][0], "source": strength_descriptions[k][1], "is_obvious": True}
         for k, v in top_strengths
         if v > 0
-    ][:2]
+    ]
 
-    # Cross-system non-obvious strength — earned by the combination, not readable from any single system
-    cross_strength = None
+    # Cross-system non-obvious strengths — earned by the combination, not readable from any single
+    # system alone. Collects every combination that genuinely matches (capped at 2), rather than
+    # stopping at the first one, so a client matching multiple rare combinations sees all of them.
+    cross_strengths = []
     if "Ajna" in defined_centers and mercury_sign in ("Pisces", "Scorpio", "Cancer"):
-        cross_strength = {
+        cross_strengths.append({
             "strength": "Structured Intuition — the Rare Synthesis",
             "source": (
                 f"Defined Ajna (consistent cognitive framework) combined with Mercury in {mercury_sign} "
@@ -334,10 +396,10 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"This cross-system combination is rarely seen and almost never discussed."
             ),
             "is_obvious": False,
-        }
-    elif life_path in (11, 22, 33) and ("Sacral" in defined_centers or "Solar Plexus" in defined_centers):
+        })
+    if life_path in (11, 22, 33) and ("Sacral" in defined_centers or "Solar Plexus" in defined_centers):
         anchor = "Sacral" if "Sacral" in defined_centers else "Solar Plexus"
-        cross_strength = {
+        cross_strengths.append({
             "strength": "Master Frequency With Somatic Grounding",
             "source": (
                 f"Life Path {life_path} (master number — elevated sensitivity and vision) combined with "
@@ -346,9 +408,9 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"The result is vision that can actually land in the body, not just circulate in the mind."
             ),
             "is_obvious": False,
-        }
-    elif 4 in profile_lines and mercury_sign in ("Virgo", "Gemini", "Aquarius"):
-        cross_strength = {
+        })
+    if 4 in profile_lines and mercury_sign in ("Virgo", "Gemini", "Aquarius"):
+        cross_strengths.append({
             "strength": "Network Intelligence Filtered by Precision",
             "source": (
                 f"Profile line 4 (learns and influences through close relationships) combined with "
@@ -357,9 +419,9 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"in real time. You extract transferable pattern from conversation in a way few line 4s do."
             ),
             "is_obvious": False,
-        }
-    elif dominant_element == "Fire" and expression in (7, 9):
-        cross_strength = {
+        })
+    if dominant_element == "Fire" and expression in (7, 9):
+        cross_strengths.append({
             "strength": "Visionary Drive Anchored by Rare Depth",
             "source": (
                 f"Fire-dominant chart (fast, inspirational, action-oriented) combined with "
@@ -369,9 +431,9 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"what makes your vision more than enthusiasm."
             ),
             "is_obvious": False,
-        }
-    elif "Head" in open_centers and 3 in profile_lines:
-        cross_strength = {
+        })
+    if "Head" in open_centers and 3 in profile_lines:
+        cross_strengths.append({
             "strength": "Pressure-Free Iteration — Learning Without Debt",
             "source": (
                 f"Open Head (not bound by fixed questions or mental pressure) combined with "
@@ -381,9 +443,9 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"who carry the weight of needing the experiment to close a loop."
             ),
             "is_obvious": False,
-        }
-    elif analytical >= 2 and relational >= 2:
-        cross_strength = {
+        })
+    if analytical >= 2 and relational >= 2:
+        cross_strengths.append({
             "strength": "Analytical Depth Delivered With Relational Warmth",
             "source": (
                 f"High analytical score (Mercury in {mercury_sign or 'earth/air sign'}, Expression {expression}) "
@@ -392,10 +454,22 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"Your combination holds both — the rare ability to be thorough and warm simultaneously."
             ),
             "is_obvious": False,
-        }
-    else:
+        })
+    if "Ego" in defined_centers and hd_type in ("Projector", "Reflector"):
+        cross_strengths.append({
+            "strength": "Willpower Without the Type's Usual Push",
+            "source": (
+                f"Defined Ego/Heart center combined with {hd_type} (a non-Sacral, non-forcing type): "
+                f"most defined-Ego people lead with will and drive it outward. Your {hd_type} strategy "
+                f"means that willpower waits for invitation or the lunar cycle rather than pushing — "
+                f"a rarer combination of genuine resolve and patience."
+            ),
+            "is_obvious": False,
+        })
+
+    if not cross_strengths:
         # Generic fallback — always find something cross-system
-        cross_strength = {
+        cross_strengths.append({
             "strength": "Adaptive Intelligence Across Contexts",
             "source": (
                 f"Life Path {life_path} (core purpose archetype) combined with HD Type {hd_type} "
@@ -405,10 +479,9 @@ def record_communication(numerology: dict, western: dict, hd: dict, gk: dict) ->
                 f"than most people realize."
             ),
             "is_obvious": False,
-        }
+        })
 
-    if cross_strength:
-        strengths.append(cross_strength)
+    strengths.extend(cross_strengths[:2])
 
     # -- Step 5: Key indicators (top 5 cross-system) --
     line_label_0 = LINE_NAMES.get(profile_lines[0], "") if profile_lines else ""

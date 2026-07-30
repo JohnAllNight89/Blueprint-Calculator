@@ -8,12 +8,14 @@ every value in the output traces to a field already computed by the pipeline.
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 import swisseph as swe
 from zoneinfo import ZoneInfo
 
 from blueprint_calculator.ephemeris import bridge_tropical_to_sign
 from blueprint_calculator.constants.hd_wheel import GATE_TO_CENTER, LINE_NAMES
+from blueprint_calculator.gene_keys import programming_partner
 from blueprint_calculator.pipeline import BlueprintReport
 
 # ---- Glyph lookup tables ----
@@ -1329,6 +1331,517 @@ def _section_summaries(report: BlueprintReport) -> dict:  # noqa: C901
     }
 
 
+# Short essence phrase per numerology number — reused for the Core Dynamic & Soul Arc
+# discovery below, where two of a client's core numbers are set in creative tension.
+_NUM_THEME = {
+    1: "bold, self-directed initiation", 2: "sensitive, diplomatic partnership",
+    3: "joyful, expressive creativity", 4: "grounded, disciplined structure",
+    5: "restless, freedom-seeking exploration", 6: "devoted, responsible nurturing",
+    7: "private, analytical depth-seeking", 8: "powerful, authoritative material mastery",
+    9: "broad, compassionate humanitarian completion",
+    11: "electrically intuitive spiritual illumination",
+    22: "world-scale visionary building", 33: "selfless, healing universal service",
+}
+
+
+def _chart_standouts(report: BlueprintReport) -> dict:  # noqa: C901
+    """
+    "Core Blueprint Standouts & Synchronicities" — a holistic pattern-synthesis layer
+    read across each system's already-calculated data. Four discoveries per system:
+    Master Frequencies & Higher Calling, Golden Threads & Repeating Echoes, The
+    Crucible & Sacred Tests, and The Core Dynamic & Soul Arc. Pure pattern detection
+    and deterministic templated language over existing values — no new calculations,
+    no LLM generation. Voice: warm, grounded mentor speaking directly to "you."
+    """
+    num = report.numerology
+    west = report.western
+    ved = report.vedic
+    hd = report.human_design
+    gk = report.gene_keys
+
+    TITLE = "Core Blueprint Standouts & Synchronicities"
+
+    # ================================================================= NUMEROLOGY ===
+    lp = num["life_path"]
+    expr = num["expression"]
+    soul = num["soul_urge"]
+    personality_n = num["personality"]
+    attitude = num["attitude"]
+    birthday_n = num["birthday"]
+    generation_n = num["generation"]
+    maturity = num["maturity"]
+    balance = num["balance"]
+    karmic_debts = num["karmic_debts"]
+    karmic_lessons = num["karmic_lessons"]
+    pinnacles = num["pinnacles"]
+    challenges = num["challenges"]
+    MASTERS = {11, 22, 33}
+
+    # 1. Master Frequencies & Higher Calling
+    master_fields = []
+    for label, val in [
+        ("Life Path", lp), ("Expression", expr), ("Soul Urge", soul),
+        ("Personality", personality_n), ("Attitude", attitude), ("Birthday", birthday_n),
+        ("Generation", generation_n), ("Maturity", maturity), ("Balance", balance),
+    ]:
+        if val in MASTERS:
+            master_fields.append((label, val))
+    for i, p in enumerate(pinnacles):
+        if p in MASTERS:
+            master_fields.append((f"Pinnacle {i + 1}", p))
+    if master_fields:
+        names = ", ".join(
+            f"{label} (value {val})" if label.startswith("Pinnacle") else f"{label} {val}"
+            for label, val in master_fields
+        )
+        if len(master_fields) >= 2:
+            master_text = (
+                f"You're carrying a master number in more than one place — {names}. "
+                f"That's not a coincidence to skim past. Master numbers run at a higher electrical voltage "
+                f"than the numbers around them: more sensitivity, more capacity, and more responsibility to actually "
+                f"do something with what you're carrying. When one shows up twice, it means this isn't a phase "
+                f"you're passing through — it's a frequency your whole life is built to run on. The pressure you've "
+                f"likely felt to be \"more\" than what a normal life asks for isn't imagined. It's the design working correctly."
+            )
+        else:
+            label, val = master_fields[0]
+            master_text = (
+                f"Your {label} carries a master number — {val}. This is a higher-voltage frequency than the single "
+                f"digits around it: more sensitivity, more perceptiveness, and a deeper calling underneath the ordinary "
+                f"business of daily life. It's not something to live up to. It's something you were already carrying "
+                f"before you had language for it — the felt sense, since childhood, that you were here to do or "
+                f"understand something a little beyond what was immediately in front of you."
+            )
+    else:
+        master_text = (
+            "No master numbers appear anywhere in your core chart. That's not an absence — it means your gifts are "
+            "built to operate through mastery of the ordinary numbers rather than the amplified intensity a master "
+            "number carries. There's real freedom in that: less internal pressure to be exceptional, more room to "
+            "simply become excellent at being exactly who you are."
+        )
+
+    # 2. Golden Threads & Repeating Echoes
+    # Note: Period Cycles are literally [Attitude, Generation, Life Path] repeated
+    # verbatim, not an independent signal — excluded here to avoid double-counting
+    # the same three values that are already counted directly below.
+    thread_counter = Counter(
+        [lp, expr, soul, personality_n, attitude, birthday_n, generation_n, maturity]
+        + list(pinnacles) + list(challenges)
+    )
+    top_number, top_count = thread_counter.most_common(1)[0] if thread_counter else (None, 0)
+    if top_count >= 3:
+        theme = _NUM_THEME.get(top_number, "a specific, recurring quality")
+        thread_text = (
+            f"The number {top_number} doesn't show up once in your chart — it shows up {top_count} separate times, "
+            f"echoing across your core numbers, your pinnacle peaks, and your challenge cycles. When a single number "
+            f"repeats that persistently, it's the chart underlining something it wants you to actually hear: "
+            f"{theme} isn't one trait among many — it's a lesson and a gift this entire lifetime keeps circling back to. "
+            f"Whatever you've resisted or struggled with around {top_number}'s theme, expect it to keep resurfacing, "
+            f"in new forms, until it's genuinely integrated rather than avoided."
+        )
+    else:
+        thread_text = (
+            "No single number dominates your chart by repetition — your numbers are genuinely varied rather than "
+            "echoing one note again and again. That's its own kind of gift: a versatile, multi-toned instrument "
+            "rather than one built around a single, insistent frequency. The lessons here arrive from many "
+            "directions rather than one repeating drumbeat."
+        )
+
+    # 3. The Crucible & Sacred Tests
+    crucible_parts = []
+    if karmic_debts:
+        debts_str = ", ".join(str(d) for d in karmic_debts)
+        crucible_parts.append(
+            f"Karmic debt numbers ({debts_str}) are present in your chart. These aren't punishments written into "
+            f"your numbers — they're sacred fires. Each one marks a specific, hard-won lesson your soul chose to "
+            f"burn through in this lifetime rather than skip. The friction they create isn't a flaw in the design; "
+            f"it's the exact resistance that forges the strength and authority you're building toward."
+        )
+    if karmic_lessons:
+        lessons_str = ", ".join(str(l) for l in karmic_lessons)
+        crucible_parts.append(
+            f"The digits missing from your name — {lessons_str} — are karmic lessons: capacities you weren't handed "
+            f"automatically and have had to earn through direct, often difficult, life experience. What comes hardest "
+            f"here is exactly what you're here to develop, not evidence that something is missing from you."
+        )
+    if not crucible_parts:
+        crucible_parts.append(
+            "You carry no karmic debt numbers and no karmic lesson gaps — every digit is present in your name, and "
+            "no unreduced debt number surfaces in your core chain. That's a genuinely lighter karmic load to carry "
+            "into this lifetime. It doesn't mean an easier life; it means the sacred tests you do face are more "
+            "evenly distributed rather than concentrated in one recurring wound."
+        )
+    crucible_text = " ".join(crucible_parts)
+
+    # 4. The Core Dynamic & Soul Arc
+    expr_theme = _NUM_THEME.get(expr, "your outer instrument")
+    soul_theme = _NUM_THEME.get(soul, "your inner drive")
+    num_standouts = {
+        "title": TITLE,
+        "sections": [
+            {"heading": "The Master Frequencies & Higher Calling", "text": master_text},
+            {"heading": "The Golden Threads & Repeating Echoes", "text": thread_text},
+            {"heading": "The Crucible & Sacred Tests", "text": crucible_text},
+            {"heading": "The Core Dynamic & Soul Arc", "text": (
+                f"Here's the paradox living at the center of your numbers: Expression {expr} gives you "
+                f"{expr_theme} as the instrument you show the world, while Soul Urge {soul} is quietly running "
+                f"{soul_theme} underneath it the entire time. These aren't in conflict — one is the visible "
+                f"instrument, the other is the reason you pick it up at all. Life Path {lp} is the road both of "
+                f"them walk together. The moment you stop trying to resolve the paradox and start letting both "
+                f"halves operate at once — the outer instrument in full service of the inner drive — is the moment "
+                f"this chart stops feeling like tension and starts feeling like home. Walk this path knowing both "
+                f"halves were always meant to be here."
+            )},
+        ],
+    }
+
+    # ============================================================= HUMAN DESIGN ===
+    hd_type = hd.get("type", "")
+    authority = hd.get("authority", "")
+    profile_hd = hd.get("profile", "")
+    strategy = hd.get("strategy", "")
+    definition = hd.get("definition", "")
+    defined_centers_hd = hd.get("defined_centers", [])
+    open_centers_hd = hd.get("open_centers", [])
+    auth_short_hd = authority.split(" (")[0] if "(" in authority else authority
+
+    _RARE_TYPE_NOTE = {
+        "Reflector": (
+            "You are a Reflector — under 1% of the population, and the rarest design there is. Every center in "
+            "your bodygraph is open, which sounds like a vulnerability until you understand what it actually means: "
+            "you're built to be a perfect mirror for the health of whatever environment you're in. That is an "
+            "extraordinarily high-voltage calling most people never carry."
+        ),
+        "Manifestor": (
+            "You are a Manifestor — roughly 9% of the population, and the only type built to initiate entirely on "
+            "your own authority, without waiting for invitation or response. That's a rarer, higher-voltage design "
+            "than it might feel like day to day, especially if the world keeps asking you to explain yourself first."
+        ),
+    }
+    if hd_type in _RARE_TYPE_NOTE:
+        hd_master_text = _RARE_TYPE_NOTE[hd_type]
+    elif len(defined_centers_hd) >= 6:
+        hd_master_text = (
+            f"With {len(defined_centers_hd)} of your 9 centers defined, you're carrying an unusually loaded, "
+            f"high-voltage design. Most of your bodygraph runs on fixed, reliable circuitry rather than open "
+            f"sampling — a consistent, always-on presence that fewer people are actually built to carry."
+        )
+    elif len(defined_centers_hd) <= 2:
+        hd_master_text = (
+            f"With only {len(defined_centers_hd)} of your 9 centers defined, you're running an unusually open, "
+            f"receptive design. That isn't a deficiency — it's a heightened sensitivity to the field around you, "
+            f"the rarer calling of being deeply, genuinely responsive rather than fixed."
+        )
+    else:
+        hd_master_text = (
+            f"As a {hd_type} with {auth_short_hd} Authority, your design runs at a distinctive, specific frequency — "
+            f"not the rarest configuration on the wheel, but a precise architecture built for exactly the way you're "
+            f"meant to move through the world."
+        )
+
+    personality_acts = hd.get("personality_activations", {})
+    design_acts = hd.get("design_activations", {})
+    p_gates = {a["gate"] for a in personality_acts.values()}
+    d_gates = {a["gate"] for a in design_acts.values()}
+    doubled_gates = sorted(p_gates & d_gates)
+    if doubled_gates:
+        gate = doubled_gates[0]
+        hd_thread_text = (
+            f"Gate {gate} is activated on both sides of your design — by a Personality (conscious) planet and a "
+            f"Design (unconscious, body-level) planet at once. That's a genuine echo: this specific gate's energy "
+            f"isn't just something you think or believe, it's something your body runs automatically too. Whatever "
+            f"that gate's theme is, expect it to show up both in how you consciously present and in how you "
+            f"instinctively act, without you having to try to align the two."
+        )
+    else:
+        hd_thread_text = (
+            "No single gate repeats across both your Personality and Design activations — your conscious "
+            "presentation and your unconscious, body-level programming draw from genuinely separate gates. "
+            "That's its own kind of richness: what you consciously believe and what your body does under pressure "
+            "are two distinct instruments, not one note played twice."
+        )
+
+    open_list = ", ".join(open_centers_hd) if open_centers_hd else "none"
+    hd_crucible_text = (
+        (
+            f"Your open centers — {open_list} — are the sacred tests built into this design. An open center isn't "
+            f"a wound; it's where you were built to take in the world's wisdom rather than carry a fixed truth of "
+            f"your own. The hard-won lesson every open center teaches is the same one, over and over: learning to "
+            f"feel the difference between what's genuinely yours and what you've absorbed from whoever's standing "
+            f"near you. That discernment, forged slowly through real experience, is exactly what turns an open "
+            f"center from a vulnerability into a form of wisdom few fixed-center people ever develop."
+        ) if open_centers_hd else
+        "With no open centers at all, you carry no built-in conditioning points the way most designs do — a rare "
+        "architecture where nearly everything about you runs consistently, on your own fixed frequency."
+    )
+
+    hd_standouts = {
+        "title": TITLE,
+        "sections": [
+            {"heading": "The Master Frequencies & Higher Calling", "text": hd_master_text},
+            {"heading": "The Golden Threads & Repeating Echoes", "text": hd_thread_text},
+            {"heading": "The Crucible & Sacred Tests", "text": hd_crucible_text},
+            {"heading": "The Core Dynamic & Soul Arc", "text": (
+                f"Here's the paradox at the heart of your design: your {strategy} strategy is the outer mechanism — "
+                f"how you're meant to move through the world without resistance — while your {auth_short_hd} "
+                f"Authority is the inner truth that actually decides. The mind wants to lead; the design insists "
+                f"the body already knows. Every moment of friction in your life traces back to one of these two "
+                f"trying to do the other's job. Profile {profile_hd} is the specific role your soul chose to learn "
+                f"this exact lesson through. Walk this path by making the strategy your outer rhythm and the "
+                f"authority your inner compass — not fighting each other, but each fully doing its own job."
+            )},
+        ],
+    }
+
+    # ================================================================ GENE KEYS ===
+    act_seq_gk = gk.get("activation_sequence", [])
+    sphere_gates = {s.get("sphere", ""): s.get("gate", 0) for s in act_seq_gk}
+    lw_gate = sphere_gates.get("Life's Work", 0)
+    ev_gate = sphere_gates.get("Evolution", 0)
+    ra_gate = sphere_gates.get("Radiance", 0)
+    pu_gate = sphere_gates.get("Purpose", 0)
+
+    partner_pairs = []
+    spheres_list = [("Life's Work", lw_gate), ("Evolution", ev_gate), ("Radiance", ra_gate), ("Purpose", pu_gate)]
+    for i in range(len(spheres_list)):
+        for j in range(i + 1, len(spheres_list)):
+            name_a, gate_a = spheres_list[i]
+            name_b, gate_b = spheres_list[j]
+            if gate_a and gate_b and programming_partner(gate_a) == gate_b:
+                partner_pairs.append((name_a, gate_a, name_b, gate_b))
+
+    if partner_pairs:
+        name_a, gate_a, name_b, gate_b = partner_pairs[0]
+        gk_master_text = (
+            f"Your {name_a} (Gate {gate_a}) and your {name_b} (Gate {gate_b}) are Programming Partners — exact "
+            f"opposites on the Gene Keys wheel, 32 positions apart. This is a genuine synchronicity, not a coincidence "
+            f"of the math: it means two entirely different domains of your life — {name_a.lower()} and "
+            f"{name_b.lower()} — are wired to mirror and complete each other. Growth in one will almost always "
+            f"show up as movement in the other, whether or not you consciously connect the two."
+        )
+    else:
+        gk_master_text = (
+            f"Your four spheres — Life's Work (Gate {lw_gate}), Evolution (Gate {ev_gate}), Radiance (Gate {ra_gate}), "
+            f"and Purpose (Gate {pu_gate}) — draw from four distinct gates rather than mirroring each other directly. "
+            f"That's its own high-voltage signature: four genuinely different frequencies, all active in you "
+            f"simultaneously, each doing its own distinct work."
+        )
+
+    gate_counts = Counter(g for _, g in spheres_list if g)
+    repeated_gate = next((g for g, c in gate_counts.items() if c >= 2), None)
+    if repeated_gate:
+        spheres_sharing = [name for name, g in spheres_list if g == repeated_gate]
+        gk_thread_text = (
+            f"Gate {repeated_gate} appears more than once in your hologenetic profile — across {' and '.join(spheres_sharing)}. "
+            f"The same shadow-to-gift-to-siddhi theme is running through more than one domain of your life at once, "
+            f"which means whatever that gate is teaching you isn't confined to one area — it's a thread woven through "
+            f"multiple layers of who you're becoming."
+        )
+    else:
+        gk_thread_text = (
+            "No gate repeats across your four spheres — each of Life's Work, Evolution, Radiance, and Purpose draws "
+            "its own distinct lesson. Your growth here comes from four separate directions rather than one theme "
+            "echoing through every layer."
+        )
+
+    gk_shadows = []
+    for s in act_seq_gk:
+        gate = s.get("gate", 0)
+        info = GENE_KEYS.get(gate, ("", "", "", ""))
+        if info[1]:
+            gk_shadows.append(f"{s.get('sphere','')} (Gate {gate}) carries the Shadow of {info[1]}")
+    gk_crucible_text = (
+        (
+            "The Gene Keys are direct about this: your shadows are not flaws to fix, they're sacred fires — the exact "
+            "doorway your gifts walk through. " + "; ".join(gk_shadows) + ". Sit with each one without reacting to it, "
+            "and it begins to transmute into its Gift on its own. Repress it or react to it, and it just gets louder."
+        ) if gk_shadows else
+        "Your activation sequence's shadow patterns weren't fully available to name here, but the same principle "
+        "holds for whatever surfaces: it's a doorway to sit with, not a flaw to fix."
+    )
+
+    gk_standouts = {
+        "title": TITLE,
+        "sections": [
+            {"heading": "The Master Frequencies & Higher Calling", "text": gk_master_text},
+            {"heading": "The Golden Threads & Repeating Echoes", "text": gk_thread_text},
+            {"heading": "The Crucible & Sacred Tests", "text": gk_crucible_text},
+            {"heading": "The Core Dynamic & Soul Arc", "text": (
+                f"Gate {lw_gate} (your Life's Work — what you're here to do) and Gate {pu_gate} (your Purpose — "
+                f"what grounds you deepest) form the core paradox of this system: one is active outward expression, "
+                f"the other is quiet inner ground. You're not meant to resolve them into one thing. You're meant to "
+                f"let your Life's Work rise out of a Purpose that's already settled and steady underneath it. "
+                f"Contemplation, not effort, is how both mature together — sustained, non-reactive attention to "
+                f"whatever shadow shows up next."
+            )},
+        ],
+    }
+
+    # ================================================================= VEDIC ===
+    rashis_raw = ved.get("rashis", {})
+    nakshatras_v = ved.get("nakshatras", {})
+    retro_bodies = set(west.get("dominant_retrogrades", [])) | {"Rahu", "Ketu"}
+    retro_grahas = [b for b in rashis_raw if b != "Lagna" and b in retro_bodies]
+
+    if retro_grahas:
+        ved_master_text = (
+            f"{', '.join(retro_grahas)} {'is' if len(retro_grahas) == 1 else 'are'} retrograde in your sidereal chart. "
+            f"In Vedic astrology, retrograde motion isn't weakness — classically it's considered an intensification, "
+            f"a planet whose lessons run deeper and more internally than a direct placement. Whatever "
+            f"{'this graha governs' if len(retro_grahas) == 1 else 'these grahas govern'} is being worked out at a "
+            f"higher, more private voltage than most people experience with that same placement."
+        )
+    else:
+        ved_master_text = (
+            "No grahas run retrograde in your sidereal chart (beyond Rahu and Ketu, which always do). Every planetary "
+            "energy here moves in its direct, outwardly-expressed mode — nothing is being processed in an unusually "
+            "internalized or intensified register."
+        )
+
+    rashi_names_v = [_parse_rashi(r)[0] for b, r in rashis_raw.items() if b != "Lagna"]
+    rashi_counts = Counter(rashi_names_v)
+    stellium_rashi, stellium_count = rashi_counts.most_common(1)[0] if rashi_counts else (None, 0)
+    lord_counts = Counter(n.get("lord", "") for b, n in nakshatras_v.items() if n.get("lord"))
+    top_lord, top_lord_count = lord_counts.most_common(1)[0] if lord_counts else (None, 0)
+
+    if stellium_count >= 3:
+        ved_thread_text = (
+            f"{stellium_count} of your grahas cluster together in {stellium_rashi} — a genuine stellium. When that "
+            f"many planetary energies concentrate in one rashi, that sign's theme isn't a background note in your "
+            f"chart, it's the dominant key nearly everything else is playing in."
+        )
+    elif top_lord_count >= 3:
+        ved_thread_text = (
+            f"{top_lord} rules the nakshatra of {top_lord_count} of your grahas at once. That's a real echo — a "
+            f"single planetary intelligence quietly running underneath multiple placements in your chart, tying "
+            f"them together more than their surface differences suggest."
+        )
+    else:
+        ved_thread_text = (
+            "Your grahas are genuinely spread across the sidereal zodiac — no single sign or nakshatra lord "
+            "dominates by repetition. Your chart draws its strength from breadth rather than one concentrated point."
+        )
+
+    rahu_rashi_v = rashis_raw.get("Rahu", "")
+    ketu_rashi_v = rashis_raw.get("Ketu", "")
+    ved_crucible_text = (
+        f"Your Rahu–Ketu axis — Rahu in {rahu_rashi_v}, Ketu in {ketu_rashi_v} — is the sacred test running underneath "
+        f"this entire incarnation. Ketu is the fluency you already carry from lifetimes of practice — so native it "
+        f"asks nothing of you. Rahu is the growth edge: unfamiliar, slightly uncomfortable, and exactly where this "
+        f"lifetime's real curriculum lives. The discomfort of leaning toward Rahu isn't a warning sign to retreat "
+        f"from — it's the precise sensation of the soul doing the work it came here to do."
+    )
+
+    moon_rashi_v = _parse_rashi(rashis_raw.get("Moon", ""))[0]
+    lagna_str_v = ved.get("lagna", "")
+    lagna_sk_v = _parse_rashi(lagna_str_v)[0] if "(" in lagna_str_v else lagna_str_v
+
+    ved_standouts = {
+        "title": TITLE,
+        "sections": [
+            {"heading": "The Master Frequencies & Higher Calling", "text": ved_master_text},
+            {"heading": "The Golden Threads & Repeating Echoes", "text": ved_thread_text},
+            {"heading": "The Crucible & Sacred Tests", "text": ved_crucible_text},
+            {"heading": "The Core Dynamic & Soul Arc", "text": (
+                f"Your {lagna_sk_v} Lagna is how you arrive in any room — the engagement the world meets first. Your "
+                f"{moon_rashi_v} Moon is what's actually happening inside you the whole time, often quite different "
+                f"from that outer arrival. This isn't a contradiction to fix. It's the design working as intended: "
+                f"the Lagna is the vehicle, the Moon is the passenger. Confidence here doesn't come from making the "
+                f"two match — it comes from trusting that both are honestly yours, running at the same time."
+            )},
+        ],
+    }
+
+    # =============================================================== WESTERN ===
+    sun_w = west.get("sun_sign", "")
+    moon_w = west.get("moon_sign", "")
+    asc_w = west.get("ascendant", "")
+    chart_ruler_w = west.get("chart_ruler", "")
+    elem_bal_w = west.get("element_balance", {}) or {}
+    retro_w = west.get("dominant_retrogrades", [])
+    placements_w = west.get("placements", {})
+    saturn_sign_w = placements_w.get("Saturn", {}).get("sign_name", "")
+    saturn_retro_w = "Saturn" in retro_w
+
+    dom_elem_count = max(elem_bal_w.values()) if elem_bal_w else 0
+    dom_elem_w = max(elem_bal_w, key=elem_bal_w.get) if elem_bal_w else ""
+    if dom_elem_count >= 5:
+        west_master_text = (
+            f"{dom_elem_count} of your planetary bodies concentrate in {dom_elem_w} — an unusually loaded, "
+            f"high-voltage elemental signature. This isn't a mild leaning, it's the dominant key your entire chart "
+            f"is playing in. Whatever {dom_elem_w} represents for you, expect it to color nearly every part of how "
+            f"you move through life, not just one corner of it."
+        )
+    else:
+        west_master_text = (
+            f"Your chart's elements are reasonably distributed, with {dom_elem_w} carrying a modest lead rather than "
+            f"an overwhelming concentration. That balance is its own gift — access to multiple registers rather than "
+            f"being locked into a single elemental key."
+        )
+
+    sign_matches = []
+    if sun_w and sun_w == moon_w:
+        sign_matches.append(("Sun and Moon", sun_w))
+    if sun_w and sun_w == asc_w:
+        sign_matches.append(("Sun and Rising", sun_w))
+    if moon_w and moon_w == asc_w:
+        sign_matches.append(("Moon and Rising", moon_w))
+    if sign_matches:
+        pair_label, shared_sign = sign_matches[0]
+        west_thread_text = (
+            f"Your {pair_label} both fall in {shared_sign} — a genuine echo. When two of your three most personal "
+            f"placements share a sign, that sign's theme isn't just one layer of you, it's reinforced from two "
+            f"separate directions at once, which is usually why it reads as more concentrated or more obviously "
+            f"\"you\" than any single placement alone would suggest."
+        )
+    else:
+        west_thread_text = (
+            f"Your Sun ({sun_w}), Moon ({moon_w}), and Rising ({asc_w}) each land in different signs — three "
+            f"genuinely distinct notes rather than one repeating chord. That's real range: identity, emotional "
+            f"nature, and first impression each speak in their own dialect."
+        )
+
+    retro_list_str = ", ".join(retro_w) if retro_w else "none"
+    west_crucible_text = (
+        (
+            f"{retro_list_str} {'runs' if len(retro_w) == 1 else 'run'} retrograde in your chart. Retrograde planets "
+            f"turn their energy inward before it can express outward — the sacred test here is that this energy's "
+            f"real work happens in private, in depth, well before it's ever visible to anyone else. "
+        ) if retro_w else ""
+    ) + (
+        f"Your Saturn in {saturn_sign_w}{' (retrograde)' if saturn_retro_w else ''} is the classical tester of this "
+        f"entire chart — the planet of earned authority, structure, and the long, sometimes hard road to genuine "
+        f"mastery. {'Retrograde Saturn suggests discipline that was built early, through real hardship, rather than handed to you gently.' if saturn_retro_w else 'A direct Saturn suggests discipline built more conventionally, through visible, external structure.'} "
+        f"Either way, wherever Saturn presses hardest is exactly where your deepest, most earned authority is being built."
+    )
+
+    west_standouts = {
+        "title": TITLE,
+        "sections": [
+            {"heading": "The Master Frequencies & Higher Calling", "text": west_master_text},
+            {"heading": "The Golden Threads & Repeating Echoes", "text": west_thread_text},
+            {"heading": "The Crucible & Sacred Tests", "text": west_crucible_text},
+            {"heading": "The Core Dynamic & Soul Arc", "text": (
+                f"Your {sun_w} Sun is the identity you're consciously growing into. Your {moon_w} Moon is the "
+                f"emotional weather running underneath it, often before your Sun has had a chance to weigh in. "
+                f"That's the paradox: the part of you that's building forward and the part of you that's feeling "
+                f"everything right now aren't always saying the same thing, and they were never meant to. Your "
+                f"{asc_w} Rising is the vehicle that carries both of them into every room, with {chart_ruler_w} — "
+                f"your chart ruler — quietly governing how easily that vehicle moves. Confidence here means letting "
+                f"the Sun lead the direction while the Moon is honestly felt, not overridden."
+            )},
+        ],
+    }
+
+    return {
+        "numerology": num_standouts,
+        "human_design": hd_standouts,
+        "gene_keys": gk_standouts,
+        "vedic": ved_standouts,
+        "western": west_standouts,
+    }
+
+
 def _build_synthesis_panels(report: BlueprintReport, vs: str) -> dict:
     """Build Core Identity, Strengths, Shadow, and Complete Synthesis panels for the Summary page."""
     num = report.numerology
@@ -1870,6 +2383,9 @@ def adapt(report: BlueprintReport) -> dict:
     # ---- section summaries (deterministic, cross-system) ----
     summaries = _section_summaries(report)
 
+    # ---- chart standouts & synchronicities (deterministic, cross-system) ----
+    standouts = _chart_standouts(report)
+
     # ---- synthesis ----
     headlines = report.synthesis["headlines"]
     n_h = headlines["numerology"]
@@ -2021,6 +2537,13 @@ def adapt(report: BlueprintReport) -> dict:
     gene_keys["section_summary"] = summaries["gene_keys"]
     if isinstance(communication, dict):
         communication["section_summary"] = summaries["communication"]
+
+    # ---- attach chart standouts & synchronicities ----
+    numerology["standouts"] = standouts["numerology"]
+    western["standouts"] = standouts["western"]
+    vedic["standouts"] = standouts["vedic"]
+    human_design["standouts"] = standouts["human_design"]
+    gene_keys["standouts"] = standouts["gene_keys"]
 
     # ---- assemble ----
     astrology = {

@@ -394,6 +394,23 @@
       });
     }
 
+    // "Core Blueprint Standouts & Synchronicities" — the holistic pattern-synthesis
+    // block, rendered above Section Analysis on every tab that has it.
+    function renderStandouts(st) {
+      if (!st || !st.sections || !st.sections.length) return "";
+      const icons = ["⚡", "🧵", "🔥", "◈"];
+      const rows = st.sections.map((sec, i) => `
+        <div class="rounded-xl bg-charcoal-950/40 border border-gold/15 p-5">
+          <p class="mb-2 text-[11px] uppercase tracking-[0.25em] text-gold-soft">${icons[i] || "✦"} ${sec.heading}</p>
+          <p class="text-sm leading-relaxed text-slate-300">${glossarize(sec.text)}</p>
+        </div>`).join("");
+      return `
+        <div class="card-metal-gold rounded-2xl p-8 space-y-5">
+          <h3 class="font-display text-xl tracking-wide text-gold-soft border-b border-gold/20 pb-3">${st.title}</h3>
+          ${rows}
+        </div>`;
+    }
+
     function sectionSummary(s) {
       if (!s || !s.light) return "";
       return `
@@ -596,6 +613,7 @@
 
       document.getElementById("numerology-cards").innerHTML =
         pillarsSection + birthSection + derivedSection + karmicSection + timingSection + cyclesSection +
+        renderStandouts(d.standouts) +
         sectionSummary(d.section_summary);
     }
 
@@ -709,6 +727,7 @@
           th("Body") + th("Sign") + th("Position") + th("Longitude") + th("Motion", "center"), planetRows) +
         tableShell("House Cusps", "Placidus system",
           th("House") + th("Sign") + th("Cusp") + th("Longitude"), houseRows) +
+        renderStandouts(western.standouts) +
         sectionSummary(western.section_summary);
     }
 
@@ -780,6 +799,7 @@
          </div>` +
         tableShell("Graha Positions", "Sidereal zodiac · Lahiri Ayanamsa",
           th("Graha") + th("Rashi") + th("Position") + th("Nakshatra") + th("Pada", "center") + th("Motion", "center"), grahaRows) +
+        renderStandouts(vedic.standouts) +
         sectionSummary(vedic.section_summary);
     }
 
@@ -865,6 +885,7 @@
            ${activationTable("Personality", "Conscious · at birth", hd.personality.activations, "text-gold-soft")}
            ${activationTable("Design", `Unconscious · ${hd.design.moment_utc} UTC`, hd.design.activations, "text-violet2-soft")}
          </div>` +
+        renderStandouts(hd.standouts) +
         sectionSummary(hd.section_summary);
       setStatus("status-hd", true);
     }
@@ -918,6 +939,7 @@
          </div>` +
         tableShell("All Activated Gene Keys", "Every gate in your bodygraph, through the Gene Keys lens",
           th("Key") + th("Name") + th("Shadow") + th("Gift") + th("Siddhi") + th("Activated By"), keyRows) +
+        renderStandouts(gk.standouts) +
         sectionSummary(gk.section_summary);
       setStatus("status-gk", true);
     }

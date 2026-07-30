@@ -145,6 +145,7 @@
         <button data-tab="vedic"         class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Vedic Astrology</button>
         <button data-tab="western"       class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Western Astrology</button>
         <button data-tab="communication" class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Communication</button>
+        <button data-tab="bigfive"       class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Big Five</button>
         <button data-tab="summary"       class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">Summary</button>
         <button data-tab="all"           class="tab-idle whitespace-nowrap rounded-lg border-b-2 px-4 py-2 text-sm font-medium transition">All Aspects</button>
       </nav>
@@ -256,6 +257,14 @@
         <h2 class="print-title">Communication Profile</h2>
         <div id="communication-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
+        </div>
+      </div>
+
+      <!-- Big Five Traits -->
+      <div id="panel-bigfive" data-panel class="mt-6 hidden">
+        <h2 class="print-title">Big Five Traits</h2>
+        <div id="bigfive-content" class="space-y-6">
+          <p class="text-sm text-slate-400">Calculate a blueprint to reveal the Big Five mapping.</p>
         </div>
       </div>
 
@@ -962,6 +971,63 @@
       setStatus("status-comm", true);
     }
 
+    // ---------- Big Five Traits ----------
+    const BIG_FIVE_TIER_LABEL = { 1: "PRIMARY", 2: "MODULATING", 3: "DEEP / QUIET" };
+    const BIG_FIVE_ORDER = ["agreeableness", "conscientiousness", "extraversion", "openness", "emotional_stability"];
+
+    function renderBigFive(bigFive) {
+      const container = document.getElementById("bigfive-content");
+      if (!bigFive || !Object.keys(bigFive).length) {
+        container.innerHTML = `<div class="card-metal rounded-2xl p-8 text-center text-sm text-slate-400">Calculate a blueprint to reveal the Big Five mapping.</div>`;
+        return;
+      }
+
+      const disclaimer = `
+        <div class="rounded-2xl border border-violet2/30 bg-violet2/5 p-5">
+          <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">Interpretive Layer — Not a Psychometric Instrument</p>
+          <p class="mt-2 text-sm leading-relaxed text-slate-300">
+            This section maps values already calculated elsewhere in your Blueprint (Numerology, Human Design, Western
+            Astrology) onto the Big Five personality framework. No new calculations are performed here, and no
+            correlation coefficients or clinical validity are implied — it is a read-only interpretive lens on data
+            you've already generated.
+          </p>
+        </div>`;
+
+      const traitCards = BIG_FIVE_ORDER.map((key) => {
+        const trait = bigFive[key];
+        if (!trait) return "";
+
+        const entries = (trait.entries || []).map((e) => {
+          const tierLabel = BIG_FIVE_TIER_LABEL[e.tier] || "—";
+          const tierColor = e.tier === 1 ? "text-gold-soft" : e.tier === 2 ? "text-violet2-soft" : "text-slate-400";
+          const didAttr = _da({
+            type: "bigfive_entry", trait: trait.trait, tier_label: tierLabel,
+            system: e.system, field: e.field, value: e.value,
+            technical: e.technical, plain: e.plain,
+            _title: `${e.system}/${e.field}`, _subtitle: `${trait.trait} · ${tierLabel}`,
+          });
+          return `
+            <div class="rounded-xl bg-charcoal-950/50 p-4 cursor-pointer hover:border-gold/40 hover:bg-charcoal-900/60 border border-transparent transition" ${didAttr} title="Click to learn more">
+              <p class="flex flex-wrap items-baseline justify-between gap-2">
+                <span class="text-[10px] font-semibold uppercase tracking-wider ${tierColor}">${tierLabel} — ${e.system}/${e.field}</span>
+                <span class="font-mono text-sm text-slate-200">${e.value}</span>
+              </p>
+              <p class="mt-2 text-xs text-slate-400 leading-relaxed">${e.technical}</p>
+              <p class="mt-1 text-sm text-slate-200 leading-relaxed">→ ${e.plain}</p>
+            </div>`;
+        }).join("");
+
+        return `
+          <div class="card-metal rounded-2xl p-6">
+            <h3 class="font-display text-lg tracking-wide text-gold-soft">${trait.trait}</h3>
+            <p class="mt-1 text-xs text-slate-500 leading-relaxed">${trait.description}</p>
+            <div class="mt-4 space-y-3">${entries || `<p class="text-sm text-slate-400">No entries available.</p>`}</div>
+          </div>`;
+      }).join("");
+
+      container.innerHTML = disclaimer + traitCards;
+    }
+
     // ---------- Celestial summary tile ----------
     function renderCelestial(astro, synthesis) {
       const wrap = document.getElementById("summary-celestial-wrap");
@@ -1510,6 +1576,7 @@
         renderHumanDesign(data.astrology);
         renderGeneKeys(data.astrology);
         renderCommunication(data.astrology);
+        renderBigFive(data.big_five);
         renderSummaryNarrative(data);
 
 const activeTab = document.querySelector("#tab-bar .tab-active");
@@ -1858,6 +1925,17 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
           <div class="space-y-3">
             ${goldSec("What this indicates", implication)}
             ${greySec("System context", `This indicator comes from ${sys} — one of the five core systems in your blueprint. Each system's signal adds confidence to the overall communication profile.`)}
+          </div>`;
+      }
+
+      if (type === "bigfive_entry") {
+        const { trait, tier_label, system: sys, field, value, technical, plain } = obj;
+        return `<div class="mb-5"><p class="text-xs text-violet2-soft uppercase tracking-wider">${trait} · ${tier_label}</p>
+          <h3 class="font-display text-2xl gold-text mt-1">${sys}/${field}: ${value}</h3></div>
+          <div class="space-y-3">
+            ${goldSec("Technical basis", technical)}
+            ${greySec("Plain language", plain)}
+            ${sec("Framework note", "This is an interpretive mapping, not a validated psychometric result — no correlation coefficients or clinical claims are implied.")}
           </div>`;
       }
 

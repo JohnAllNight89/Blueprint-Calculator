@@ -1602,6 +1602,7 @@ def adapt(report: BlueprintReport) -> dict:
         "pinnacles": report.numerology["pinnacles"],
         "challenges": report.numerology["challenges"],
         "periods": report.numerology["periods"],
+        "cycle_age_ranges": report.numerology["cycle_age_ranges"],
     }
 
     # ---- location / time context ----

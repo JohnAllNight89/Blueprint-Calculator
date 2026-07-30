@@ -154,6 +154,19 @@ def pinnacle_numbers(attitude: int, generation: int, life_path: int) -> list[int
     return [first, second, third, fourth]
 
 
+def cycle_age_ranges(life_path: int) -> list[tuple[int, int | None]]:
+    """
+    Age brackets for the four Pinnacle/Challenge life-cycle periods, standard
+    numerology convention: Pinnacle 1 runs from birth to (36 - Life Path),
+    Pinnacles 2 and 3 each run 9 years, Pinnacle 4 runs the rest of life.
+    Challenge periods run concurrently with the same four brackets.
+    """
+    end1 = 36 - life_path
+    end2 = end1 + 9
+    end3 = end2 + 9
+    return [(0, end1), (end1, end2), (end2, end3), (end3, None)]
+
+
 # --------------------------------------------------------------- NT-5 ----
 
 def challenge_numbers(attitude: int, generation: int, life_path: int) -> list[int]:
@@ -282,6 +295,12 @@ def record_numerology(
         value=periods, source=["NBD-2", "NBD-4", "NBD-1"],
         calculation="[Attitude, Generation, LifePath], masters preserved",
     )
+    cycle_ages = cycle_age_ranges(lp.value)
+    ledger.record(
+        "NT-7", system="Numerology", phase="Phase 4, Step 10", label="Pinnacle/Challenge Age Ranges",
+        value=cycle_ages, source=["NBD-1"],
+        calculation="1st: 0 to (36-LifePath); 2nd/3rd: +9 years each; 4th: to end of life",
+    )
 
     result = {
         "life_path": lp.value, "attitude": att.value, "birthday": bday.value, "generation": gen.value,
@@ -289,6 +308,7 @@ def record_numerology(
         "maturity": maturity.value, "balance": balance.value,
         "karmic_debts": debts, "karmic_lessons": lessons, "subconscious_self": subconscious,
         "personal_year": py, "personal_month": pm, "personal_day": pd,
+        "cycle_age_ranges": cycle_ages,
         "pinnacles": pinnacles, "challenges": challenges, "periods": periods,
         "expression_raw": expr.raw, "soul_urge_raw": soul.raw, "personality_raw": pers.raw,
         "reduction_chains": {

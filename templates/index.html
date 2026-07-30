@@ -536,6 +536,44 @@
       const mkCycleGrid = (label, arr) => arr.map((n, i) =>
         numSmall(`${label} ${i + 1}`, n, "", {type:"numerology_extra",label:`${label} ${i+1}`,number:n,note:label+" cycle",_title:`${label} ${i+1}`,_subtitle:"Life cycle number"})).join("");
 
+      // Age-range label for a cycle index — the backend computes these from Life Path
+      // (Pinnacle/Challenge 1: birth to 36-LifePath; 2 and 3: +9 years each; 4: rest of life)
+      const ageRanges = d.cycle_age_ranges || [];
+      const ageLabel = (i) => {
+        const r = ageRanges[i];
+        if (!r) return "";
+        const [start, end] = r;
+        return end === null || end === undefined ? `Age ${start}+` : `Age ${start}–${end}`;
+      };
+
+      const mkPinnacleGrid = (arr) => arr.map((n, i) => {
+        const didAttr = _da({
+          type: "numerology_pinnacle", index: i + 1, number: n, age_range: ageLabel(i),
+          _title: `Pinnacle ${i + 1}`, _subtitle: ageLabel(i) || "Life cycle phase",
+        });
+        return `
+          <div ${didAttr} class="rounded-xl card-metal p-4 text-center cursor-pointer hover:border-gold/50 transition" title="Click to learn more">
+            <p class="text-[10px] uppercase tracking-wider text-slate-500">Pinnacle ${i + 1}</p>
+            <div class="mt-1 font-display text-3xl gold-text">${n}</div>
+            <p class="mt-0.5 text-[10px] text-violet2-soft">${ageLabel(i)}</p>
+            <p class="mt-1 text-[9px] text-slate-600 uppercase tracking-wider">↑ tap</p>
+          </div>`;
+      }).join("");
+
+      const mkChallengeGrid = (arr) => arr.map((n, i) => {
+        const didAttr = _da({
+          type: "numerology_challenge", index: i + 1, number: n, age_range: ageLabel(i),
+          _title: `Challenge ${i + 1}`, _subtitle: ageLabel(i) || "Life cycle phase",
+        });
+        return `
+          <div ${didAttr} class="rounded-xl card-metal p-4 text-center cursor-pointer hover:border-gold/50 transition" title="Click to learn more">
+            <p class="text-[10px] uppercase tracking-wider text-slate-500">Challenge ${i + 1}</p>
+            <div class="mt-1 font-display text-3xl gold-text">${n}</div>
+            <p class="mt-0.5 text-[10px] text-amber-500/80">${ageLabel(i)}</p>
+            <p class="mt-1 text-[9px] text-slate-600 uppercase tracking-wider">↑ tap</p>
+          </div>`;
+      }).join("");
+
       const cyclesSection = `
         <div class="card-metal rounded-2xl p-6">
           <h3 class="font-display text-lg tracking-wide text-gold-soft">Life Cycles</h3>
@@ -543,11 +581,11 @@
           <div class="mt-5 space-y-5">
             <div>
               <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-violet2-soft">Pinnacle Numbers</p>
-              <div class="grid grid-cols-4 gap-3">${mkCycleGrid("Pinnacle", d.pinnacles)}</div>
+              <div class="grid grid-cols-4 gap-3">${mkPinnacleGrid(d.pinnacles)}</div>
             </div>
             <div>
               <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-amber-500/80">Challenge Numbers</p>
-              <div class="grid grid-cols-4 gap-3">${mkCycleGrid("Challenge", d.challenges)}</div>
+              <div class="grid grid-cols-4 gap-3">${mkChallengeGrid(d.challenges)}</div>
             </div>
             <div>
               <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Period Cycles</p>
@@ -707,6 +745,10 @@
          </div>`;
       };
 
+      const lagnaAttr = _da({type:"vedic_lagna",rashi:lagna.rashi,sign:lagna.sign,nakshatra:lagna.nakshatra,pada:lagna.pada,position:lagna.position,_title:`Lagna in ${lagna.rashi}`,_subtitle:"Vedic Rising Sign"});
+      const ayanamsaAttr = _da({type:"vedic_ayanamsa",value:vedic.ayanamsa_dms,name:vedic.ayanamsa_name,_title:"Ayanamsa",_subtitle:vedic.ayanamsa_name});
+      const mahadashaAttr = _da({type:"vedic_mahadasha",lord:vedic.starting_mahadasha,_title:`${vedic.starting_mahadasha || "—"} Mahadasha`,_subtitle:"Starting Dasha Lord"});
+
       container.innerHTML =
         contextBanner(astro) +
         `<div class="card-metal rounded-2xl p-6">
@@ -715,7 +757,7 @@
            <div class="mt-4 grid grid-cols-2 gap-4 xl:grid-cols-4">
              ${portraitCard("☉", "Sun · Atma", sunGraha)}
              ${portraitCard("☽", "Moon · Manas", moonGraha)}
-             <div class="card-metal-gold rounded-2xl p-5 text-center">
+             <div ${lagnaAttr} class="card-metal-gold rounded-2xl p-5 text-center cursor-pointer hover:border-gold/60 transition" title="Click to learn more">
                <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">⊕ Lagna · Rising</p>
                <div class="mt-2 font-display text-2xl gold-text">${lagna.rashi}</div>
                <p class="mt-1 text-xs text-slate-400">${lagna.nakshatra} · Pada ${lagna.pada}</p>
@@ -725,12 +767,12 @@
            </div>
          </div>` +
         `<div class="grid gap-4 sm:grid-cols-2">
-           <div class="card-metal rounded-2xl p-5 text-center">
+           <div ${ayanamsaAttr} class="card-metal rounded-2xl p-5 text-center cursor-pointer hover:border-gold/50 transition" title="Click to learn more">
              <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">Ayanamsa</p>
              <div class="mt-2 font-display text-3xl text-slate-100">${vedic.ayanamsa_dms}</div>
              <p class="mt-2 text-xs text-slate-400">${vedic.ayanamsa_name} · sidereal = tropical − ayanamsa</p>
            </div>
-           <div class="card-metal rounded-2xl p-5">
+           <div ${mahadashaAttr} class="card-metal rounded-2xl p-5 cursor-pointer hover:border-gold/50 transition" title="Click to learn more">
              <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft mb-3">Starting Mahadasha</p>
              <p class="font-display text-2xl gold-text">${vedic.starting_mahadasha || "—"}</p>
              <p class="mt-2 text-xs text-slate-400">Dasha lord at birth · Vimsottari 120-year cycle</p>
@@ -1708,6 +1750,38 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       Revati:"The wealthy — Mercury ruled. Nourishment, protection, completion, spiritual journey. The final journey home through compassion.",
     };
 
+    // Vedic Rashis (sidereal signs) — keyed by the English equivalent name. Distinct
+    // Vedic-specific framing (ruling planet, element, classical theme), not a re-use
+    // of Western tropical sign text, since sidereal placements carry their own tradition.
+    const RASHI_DESC = {
+      Aries:"Mesha — ruled by Mars. Fire, cardinal. The ram: the sign of the warrior, first initiative, and unguarded courage before caution sets in.",
+      Taurus:"Vrishabha — ruled by Venus. Earth, fixed. The bull: the sign of patient accumulation, sensual enjoyment, and steady material grounding.",
+      Gemini:"Mithuna — ruled by Mercury. Air, dual. The twins: the sign of duality, communication, and the restless gathering of information.",
+      Cancer:"Karka — ruled by the Moon, its own sign. Water, cardinal. The crab: the sign of emotional roots, nurturing, and protective belonging.",
+      Leo:"Simha — ruled by the Sun, its own sign. Fire, fixed. The lion: the sign of sovereign identity, creative authority, and being genuinely seen.",
+      Virgo:"Kanya — ruled by Mercury. Earth, dual. The maiden: the sign of discernment, service, and precise, purifying attention to detail.",
+      Libra:"Tula — ruled by Venus, its exaltation. Air, cardinal. The scales: the sign of balance, partnership, and fairness weighed carefully.",
+      Scorpio:"Vrishchika — ruled by Mars. Water, fixed. The scorpion: the sign of hidden depth, transformation, and intensity that doesn't stay on the surface.",
+      Sagittarius:"Dhanu — ruled by Jupiter, its own sign. Fire, dual. The archer: the sign of philosophical reach, faith, and aiming toward a distant, meaningful target.",
+      Capricorn:"Makara — ruled by Saturn, its own sign. Earth, cardinal. The sea-goat: the sign of disciplined ambition, structure, and earned authority.",
+      Aquarius:"Kumbha — ruled by Saturn. Air, fixed. The water-bearer: the sign of collective vision, detachment from convention, and service to the wider community.",
+      Pisces:"Meena — ruled by Jupiter, its own sign. Water, dual. The fish: the sign of dissolution, compassion, and spiritual surrender beyond the individual self.",
+    };
+
+    // Mahadasha lords — the ruling planet of the ~120-year Vimshottari Dasha cycle
+    // active at birth, each carrying a distinct life-theme for that period.
+    const MAHADASHA_DESC = {
+      Ketu:"7-year period, the shortest. Ketu Mahadasha themes: detachment, spiritual searching, loose ends from the past resolving, a pull away from material ambition.",
+      Venus:"20-year period, the longest. Venus Mahadasha themes: relationship, creativity, comfort, refinement, and the pursuit of beauty and pleasure.",
+      Sun:"6-year period, the shortest of all nine. Sun Mahadasha themes: identity, authority, visibility, and stepping into a more self-directed public role.",
+      Moon:"10-year period. Moon Mahadasha themes: emotional development, domestic life, the public mind, and a heightened need for genuine nurturing.",
+      Mars:"7-year period. Mars Mahadasha themes: action, conflict resolution, courage, and building the discipline to assert yourself directly.",
+      Rahu:"18-year period. Rahu Mahadasha themes: ambition, unconventional growth, and being pulled toward genuinely unfamiliar territory that the soul is here to learn.",
+      Jupiter:"16-year period. Jupiter Mahadasha themes: expansion, wisdom, teaching, and growth through opportunity, generosity, and good fortune.",
+      Saturn:"19-year period, the second-longest. Saturn Mahadasha themes: discipline, delay followed by earned reward, structure, and long-term responsibility.",
+      Mercury:"17-year period. Mercury Mahadasha themes: communication, learning, commerce, and refining how you think and express ideas.",
+    };
+
     const HD_CENTER_DESC = {
       Head:         { title:"Head Center",         governs:"Mental pressure, inspiration, existential questions, and the drive to make sense of life.", defined:"You have a consistent, reliable source of mental pressure and inspiration. Your questions and thought-streams are yours alone — be careful not to impose your mental pressure on others.", open:"You are not here to have fixed answers or constant mental pressure. You are here to be inspired by others' questions without being pressured to answer them. Your wisdom is knowing which questions are worth pursuing." },
       Ajna:         { title:"Ajna Center",          governs:"Mental processing, conceptualization, analysis, certainty, opinions, and fixed perspectives.", defined:"You have a consistent, fixed way of thinking and processing. Your opinions and conceptual frameworks are reliable and uniquely yours — you create mental certainty in yourself and others.", open:"You are not designed to have fixed opinions. You are the most flexible thinker in the room — a receptor for others' ideas and mental energy. Your gift is evaluating ideas without attaching to them as 'yours'." },
@@ -1758,6 +1832,146 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       "42-53":"Maturation (Cyclic Consciousness). Full experience of life's cycles — beginning to end, in every domain.",
       "43-23":"Structuring — see 23-43.",
       "47-64":"Abstraction (Mental Activity/Clarity). Making meaning from confused life experiences — the mental storyteller.",
+    };
+
+    // Gene Keys 1-64 — each gate's Shadow/Gift/Siddhi spectrum explained specifically,
+    // not as generic tier boilerplate. The goal of each entry is to teach that one
+    // gate's actual theme, not just label which frequency band it's in.
+    const GENE_KEY_TEACHING = {
+      1:{shadow_text:"Entropy shows up as creative energy leaking out through comparison, self-doubt, or waiting for permission to create.",gift_text:"Freshness is the ability to bring a genuinely original angle to anything you touch, unconcerned with whether it's been done before.",siddhi_text:"Beauty is creativity so unguarded it becomes an expression of pure being — art that requires no audience to be complete."},
+      2:{shadow_text:"Dislocation is the feeling of being cut off from your own direction, waiting for someone else to tell you where to go.",gift_text:"Orientation is a deep, receptive knowing of your own true direction that doesn't need external validation to trust.",siddhi_text:"Unity is the direct experience that there was never any separation between your direction and everything else's."},
+      3:{shadow_text:"Chaos is the frustration of early-stage confusion mistaken for failure, abandoning things right before they'd click into order.",gift_text:"Innovation is the capacity to stay with genuine confusion long enough for a truly new order to emerge from it.",siddhi_text:"Innocence is total trust that out of any chaos, the right form will emerge in its own time, without forcing it."},
+      4:{shadow_text:"Intolerance is impatience with others (or yourself) for not understanding something as fast as you'd like.",gift_text:"Understanding is the ability to answer confusion with genuine, patient clarity that actually lands for the other person.",siddhi_text:"Forgiveness is understanding taken all the way — seeing so clearly why something happened that blame simply dissolves."},
+      5:{shadow_text:"Impatience is trying to force natural timing, creating stress by rushing a process that needed to unfold on its own.",gift_text:"Patience is trusting rhythm and timing so deeply that waiting stops feeling like waiting at all.",siddhi_text:"Timelessness is living so fully inside the present moment that the pressure of clock-time disappears entirely."},
+      6:{shadow_text:"Conflict as shadow is friction used defensively — picking fights to avoid real intimacy or to protect a boundary that was never actually threatened.",gift_text:"Diplomacy is the skill of using natural tension productively, finding the resolution that serves everyone rather than just winning.",siddhi_text:"Peace is a state so settled that conflict has nothing left in you to attach to or provoke."},
+      7:{shadow_text:"Division is leadership that splits people into camps, using position to control rather than to genuinely guide.",gift_text:"Guidance is quiet, capable leadership that others follow because it's trustworthy, not because it demands to be followed.",siddhi_text:"Virtue is leadership so selfless it becomes an example simply by existing, without any need to lead at all."},
+      8:{shadow_text:"Mediocrity is holding back your true individual contribution to avoid standing out or being judged.",gift_text:"Style is the confidence to contribute your genuinely unique way of doing things without diluting it to fit in.",siddhi_text:"Exquisiteness is individual contribution so refined and true it becomes a living work of art others recognize instantly."},
+      9:{shadow_text:"Inertia is knowing exactly what small, precise action would help and still not taking it — energy stuck in potential.",gift_text:"Determination is the focused will to follow one small, precise thread all the way through to completion.",siddhi_text:"Invincibility is a focus so total and settled that nothing external can knock it off its own quiet momentum."},
+      10:{shadow_text:"Self-Obsession is constantly performing an identity for others rather than simply being who you actually are.",gift_text:"Naturalness is the ease of behaving exactly as you are in any context, without adjusting yourself for approval.",siddhi_text:"Being is presence so authentic and unforced it becomes a living permission slip for everyone around you to do the same."},
+      11:{shadow_text:"Obscurity is having real ideas and insight but keeping them hidden out of fear they won't be understood or accepted.",gift_text:"Idealism is the gift of generating genuinely inspiring ideas and having the courage to actually share them.",siddhi_text:"Light is ideas so clear and true they illuminate a path for others simply by being spoken."},
+      12:{shadow_text:"Vanity is withholding real feeling or connection out of self-consciousness about how you'll be perceived.",gift_text:"Discrimination is knowing precisely when and with whom it's safe to be truly open, rather than either shutting down or oversharing.",siddhi_text:"Purity is expression so unguarded and honest it purifies whatever it touches, simply through its own clarity."},
+      13:{shadow_text:"Discord is holding onto old grievances and disappointments, replaying stories of how people let you down.",gift_text:"Discernment is the ability to truly listen to others' stories and extract the honest, useful pattern within them.",siddhi_text:"Empathy is listening so complete it dissolves the boundary between your story and everyone else's, revealing one shared human experience."},
+      14:{shadow_text:"Compromise is settling for less than your actual resources or capability out of fear or lack of energy.",gift_text:"Competence is bringing real skill and sustained energy to whatever work is genuinely yours to do.",siddhi_text:"Bounteousness is resourcefulness so abundant it naturally overflows into generosity toward everyone around you."},
+      15:{shadow_text:"Dullness is going through the motions without any real spark — presence without magnetism.",gift_text:"Magnetism is a natural charisma that draws people in simply through embracing your own ordinary humanity fully.",siddhi_text:"Florescence is a radiant simplicity so complete it blesses everyone who encounters it, without any effort at all."},
+      16:{shadow_text:"Indifference is a lack of genuine enthusiasm, going through skill-building on autopilot without real engagement.",gift_text:"Versatility is enthusiastic mastery across multiple skills, gained through genuinely enjoyable repeated practice.",siddhi_text:"Mastery is skill so complete and joyfully embodied it becomes an art form that inspires others simply to witness."},
+      17:{shadow_text:"Opinion is holding a fixed viewpoint too tightly and mistaking it for objective fact.",gift_text:"Far-Sightedness is organizing many perspectives into a genuinely useful, forward-looking pattern.",siddhi_text:"Omniscience is perspective so expanded it holds every viewpoint simultaneously, without needing to fix on any single one."},
+      18:{shadow_text:"Judgment is fault-finding turned outward or inward, seeing what's broken without ever getting to genuine repair.",gift_text:"Integrity is using a sharp, corrective eye to actually fix what's flawed, in yourself or in a system, with real care.",siddhi_text:"Perfection is correction taken so far it reveals that what looked flawed was, seen rightly, already whole."},
+      19:{shadow_text:"Co-dependence is sacrificing your own needs to stay needed by, or approved of by, others.",gift_text:"Sensitivity is genuine attunement to what a relationship or community actually needs, offered without losing yourself.",siddhi_text:"Sacrifice is generosity so complete it no longer distinguishes between your own needs and everyone else's."},
+      20:{shadow_text:"Superficiality is staying in surface-level busyness or performance rather than being genuinely present.",gift_text:"Self-Assurance is confident presence in the current moment, acting from what's true right now rather than a plan.",siddhi_text:"Presence is a stillness so total that action and non-action become the same thing, effortless and exactly right."},
+      21:{shadow_text:"Control is trying to manage outcomes or people out of fear that things will fall apart without your grip on them.",gift_text:"Authority is legitimate, earned control over your own domain, exercised with confidence rather than fear.",siddhi_text:"Valor is authority so secure it can let go of control entirely and still trust the outcome completely."},
+      22:{shadow_text:"Dishonor is reacting badly under emotional pressure, then blaming circumstances instead of owning the reaction.",gift_text:"Graciousness is emotional maturity — responding to pressure and interaction with genuine social grace.",siddhi_text:"Grace is emotional presence so refined it transforms any room it enters, without any visible effort."},
+      23:{shadow_text:"Complexity is overcomplicating a simple truth until no one, including you, can actually follow it.",gift_text:"Simplicity is the rare gift of distilling something genuinely complex into a clear, sharable truth.",siddhi_text:"Quintessence is truth so simple and complete that it needs no further explanation at all."},
+      24:{shadow_text:"Addiction is compulsively repeating old thought-loops or habits instead of genuinely moving forward.",gift_text:"Invention is the ability to break an old pattern by finding a genuinely new way of thinking about it.",siddhi_text:"Silence is a mind so clear of compulsive looping that new insight simply arises on its own, unforced."},
+      25:{shadow_text:"Constriction is closing your heart to protect against being hurt, cutting yourself off from universal love in the process.",gift_text:"Acceptance is loving what's actually in front of you, including yourself, without needing it to be different first.",siddhi_text:"Universal Love is love with no object and no condition at all — love as the basic nature of everything."},
+      26:{shadow_text:"Pride is inflating your own achievements or manipulating the story to look better than the truth.",gift_text:"Artfulness is genuine, persuasive skill in influencing others, built on real substance rather than exaggeration.",siddhi_text:"Invisibility is influence so effortless and true it moves people without ever needing to be noticed doing so."},
+      27:{shadow_text:"Selfishness is caretaking that's really about what you get back, or withholding care to protect your own resources.",gift_text:"Altruism is genuine, sustainable generosity toward others that doesn't deplete you in the process.",siddhi_text:"Selflessness is care so pure it no longer distinguishes between nourishing yourself and nourishing everyone else."},
+      28:{shadow_text:"Purposelessness is drifting through risk and struggle without any sense of what it's actually for.",gift_text:"Totality is throwing yourself completely into life's challenges because you've found what genuinely matters to you.",siddhi_text:"Immortality is living so fully inside each moment that the fear of death simply has nothing left to attach to."},
+      29:{shadow_text:"Half-Heartedness is saying yes to things without genuine commitment, then quietly resenting or abandoning them.",gift_text:"Commitment is the discipline of saying yes only when you mean it, and then following all the way through.",siddhi_text:"Devotion is commitment so total that surrender itself becomes effortless and complete."},
+      30:{shadow_text:"Desire as shadow is chasing intensity or pleasure to fill an emptiness that the chasing never actually resolves.",gift_text:"Lightness is holding desire and feeling with a playful, unattached quality rather than being gripped by it.",siddhi_text:"Rapture is feeling so total and unclung-to that ordinary desire dissolves into pure, unconditional joy."},
+      31:{shadow_text:"Arrogance is leading from ego, needing to be seen as right or in charge rather than genuinely serving the group.",gift_text:"Leadership is natural, democratic influence — leading because others genuinely trust your voice.",siddhi_text:"Humility is leadership so selfless it barely registers as leading at all, even while genuinely guiding many."},
+      32:{shadow_text:"Failure as shadow is such a strong fear of failing that you avoid the risk needed to build anything lasting.",gift_text:"Preservation is the instinct to protect and sustain what's genuinely valuable, built through real trial and error.",siddhi_text:"Veneration is reverence for what endures so complete it inspires others simply by your relationship to it."},
+      33:{shadow_text:"Forgetting is avoiding the reflection needed to integrate past experience, staying busy instead of processing it.",gift_text:"Mindfulness is the discipline of stepping back to genuinely reflect and integrate lived experience.",siddhi_text:"Revelation is reflection so deep it uncovers universal truth hidden inside your own personal history."},
+      34:{shadow_text:"Force is raw power used without direction or restraint, often creating collateral damage in the process.",gift_text:"Strength is power under conscious control, applied precisely where and when it's actually needed.",siddhi_text:"Majesty is strength so integrated it commands genuine respect without ever needing to be forceful."},
+      35:{shadow_text:"Hunger is a restless craving for the next new experience that never quite feels like enough.",gift_text:"Adventure is genuine appetite for new experience, pursued because it enriches life rather than fills a void.",siddhi_text:"Boundlessness is experience so fully embraced that the craving for the next new thing simply falls away."},
+      36:{shadow_text:"Turbulence is being overwhelmed by intense emotional experience without yet finding the meaning inside it.",gift_text:"Humanity is emotional intensity metabolized into genuine compassion and connection with others' struggles.",siddhi_text:"Compassion is emotional experience so fully integrated it becomes boundless empathy for every human struggle."},
+      37:{shadow_text:"Weakness is avoiding genuine responsibility to family or community out of fear or resentment.",gift_text:"Equality is warm, fair-minded loyalty that treats everyone in the family or community circle as genuinely equal.",siddhi_text:"Tenderness is warmth so complete it makes anyone in its presence feel like family."},
+      38:{shadow_text:"Struggle is fighting battles that don't actually matter, wasting energy defending things not worth the fight.",gift_text:"Perseverance is choosing the fight that genuinely matters, and staying with it until it's actually won.",siddhi_text:"Honor is perseverance so principled it inspires deep respect, regardless of whether the fight is ever seen by others."},
+      39:{shadow_text:"Provocation is stirring things up destructively, creating conflict rather than movement toward real change.",gift_text:"Dynamism is stirring stagnant situations productively, provoking exactly the movement that was needed.",siddhi_text:"Liberation is provocation so precisely aimed it frees not just yourself but everyone caught in the same stuck pattern."},
+      40:{shadow_text:"Exhaustion is depleting yourself by refusing to ask for or accept support when you genuinely need it.",gift_text:"Resolve is the willpower to complete what's yours to do, while allowing real rest and support along the way.",siddhi_text:"Divine Will is resolve so aligned with a larger purpose that effort and surrender stop feeling like opposites."},
+      41:{shadow_text:"Fantasy is imagining a future so vividly it substitutes for actually starting the real thing.",gift_text:"Anticipation is genuine, energizing imagination of what's possible, channeled into actually initiating it.",siddhi_text:"Emanation is imagination so pure it manifests new beginnings simply by holding the vision clearly."},
+      42:{shadow_text:"Expectation is holding onto how things 'should' conclude, resisting the natural ending a cycle actually needs.",gift_text:"Detachment is knowing when something has genuinely run its course and letting it complete without clinging.",siddhi_text:"Celebration is detachment so complete that every ending is met with genuine joy rather than loss."},
+      43:{shadow_text:"Deafness is dismissing your own genuine insight because it doesn't fit existing consensus or logic.",gift_text:"Insight is trusting a sudden, individual breakthrough of understanding even when it can't yet be explained.",siddhi_text:"Epiphany is insight so total and undeniable that it reorders everything around it instantly."},
+      44:{shadow_text:"Interference is repeating unconscious patterns from the past that sabotage present teamwork.",gift_text:"Teamwork is instinctively recognizing who belongs together and building genuinely functional collaboration.",siddhi_text:"Synarchy is collaboration so instinctive it functions like a single organism made of many people."},
+      45:{shadow_text:"Dominance is hoarding resources or control at the expense of the wider group's genuine wellbeing.",gift_text:"Synergy is gathering people and resources in a way that genuinely benefits the whole community.",siddhi_text:"Communion is synergy so complete that resources, people, and purpose merge into one shared abundance."},
+      46:{shadow_text:"Seriousness is treating the body and physical life as a burden or obstacle rather than a source of delight.",gift_text:"Delight is genuine enjoyment of being embodied, finding pleasure in physical presence and being in the right place at the right time.",siddhi_text:"Ecstasy is embodied delight so complete it becomes a direct experience of grace in ordinary physical life."},
+      47:{shadow_text:"Oppression is feeling trapped by confusing past experiences that haven't yet been transmuted into meaning.",gift_text:"Transmutation is finding real understanding and meaning inside confusing or painful past experience.",siddhi_text:"Transfiguration is transmutation so complete that past confusion is revealed as having been meaningful all along."},
+      48:{shadow_text:"Inadequacy is doubting you have the depth of skill needed, even when the actual capability is already there.",gift_text:"Resourcefulness is trusting your accumulated depth of skill and knowledge to meet whatever the moment requires.",siddhi_text:"Wisdom is resourcefulness so deep it draws on a well of understanding that feels genuinely bottomless."},
+      49:{shadow_text:"Reaction is rejecting people or systems reflexively rather than working to actually improve them.",gift_text:"Revolution is principled rejection of what's no longer working, in service of building something genuinely better.",siddhi_text:"Rebirth is revolution so complete it doesn't just replace the old system but transforms it into something wholly new."},
+      50:{shadow_text:"Corruption is bending values or rules under pressure to protect personal comfort or position.",gift_text:"Equilibrium is holding genuine values steady, creating fair and balanced structures for a group or community.",siddhi_text:"Harmony is equilibrium so complete it naturally aligns everyone around it without any need for enforcement."},
+      51:{shadow_text:"Agitation is reacting to shock or competition with panic or aggression rather than initiative.",gift_text:"Initiative is meeting sudden shock or competition with bold, decisive, awakened action.",siddhi_text:"Awakening is initiative so total that every shock becomes an opportunity for genuine spiritual awakening."},
+      52:{shadow_text:"Stress is restless tension from resisting stillness, unable to settle even when nothing needs doing.",gift_text:"Restraint is the discipline of genuinely settling into stillness and focus when that's what's actually needed.",siddhi_text:"Stillness is restraint so complete it becomes a permanent, undisturbed calm underneath all activity."},
+      53:{shadow_text:"Immaturity is starting many things enthusiastically but abandoning them before real development takes hold.",gift_text:"Expansion is sustained, patient development that carries a beginning all the way through to genuine growth.",siddhi_text:"Superabundance is expansion so complete it overflows generously into every new beginning it touches."},
+      54:{shadow_text:"Greed is grasping for status or advancement in ways that compromise your own integrity.",gift_text:"Aspiration is genuine, grounded ambition to rise and improve your circumstances through real effort.",siddhi_text:"Ascension is aspiration so pure it transforms ambition itself into a spiritual rather than material climb."},
+      55:{shadow_text:"Victimization is interpreting your own emotional state as something being done to you by circumstance or other people.",gift_text:"Freedom (as gift) is owning your emotional state as genuinely your own, freeing you from blaming outside events for it.",siddhi_text:"Freedom (as siddhi) is emotional abundance so complete that circumstance has no power over your inner state at all."},
+      56:{shadow_text:"Distraction is chasing stimulation to avoid sitting with an unresolved, restless feeling underneath.",gift_text:"Enrichment is turning genuine curiosity and storytelling into real enrichment for yourself and others.",siddhi_text:"Intoxication is enrichment so complete that ordinary experience itself becomes a source of wonder."},
+      57:{shadow_text:"Unease is a background anxiety that drowns out or distorts what your intuition is actually telling you.",gift_text:"Intuition is clear, in-the-moment gut knowing that you can act on with genuine confidence.",siddhi_text:"Clarity is intuition so unclouded it perceives what's true in any moment instantly and completely."},
+      58:{shadow_text:"Dissatisfaction is a chronic sense that things aren't quite right, sapping vitality rather than fueling improvement.",gift_text:"Vitality is high, joyful life-force that channels dissatisfaction into genuinely improving things.",siddhi_text:"Bliss is vitality so complete it experiences life itself, exactly as it is, as already extraordinary."},
+      59:{shadow_text:"Dishonesty is using strategy or charm to manufacture false intimacy rather than being genuinely transparent.",gift_text:"Intimacy is the gift of breaking down real barriers between people through honest, transparent connection.",siddhi_text:"Transparency is intimacy so complete that no barrier between self and other remains at all."},
+      60:{shadow_text:"Limitation as shadow is resenting real constraints instead of using them as the container that makes creation possible.",gift_text:"Realism is accepting actual limitations as the practical foundation you build genuinely new things from.",siddhi_text:"Justice is realism so complete it recognizes limitation itself as a form of perfect, fair order."},
+      61:{shadow_text:"Psychosis is obsessively needing to explain or intellectually pin down every mystery rather than sit with not-knowing.",gift_text:"Inspiration is receiving genuine insight from the unknown without needing to fully explain it first.",siddhi_text:"Sanctity is inspiration so pure it's experienced as a direct, sacred knowing beyond thought."},
+      62:{shadow_text:"Intellect as shadow is drowning meaning in excessive detail, unable to see past minor facts to the real point.",gift_text:"Precision is using detail skillfully to express a genuine, well-organized, and useful truth.",siddhi_text:"Impeccability is precision so complete that every detail expressed serves truth perfectly, with nothing wasted."},
+      63:{shadow_text:"Doubt is chronic suspicion that undermines trust even when there's no real evidence for it.",gift_text:"Inquiry is healthy, genuine questioning that tests ideas fairly before deciding whether to trust them.",siddhi_text:"Truth is inquiry so complete it arrives at certainty that no longer needs to keep questioning itself."},
+      64:{shadow_text:"Confusion is being overwhelmed by unprocessed impressions and experiences with no clear thread between them.",gift_text:"Imagination is weaving scattered impressions into a genuinely meaningful and creative new pattern.",siddhi_text:"Illumination is imagination so complete it resolves all prior confusion into a single, clear moment of understanding."},
+    };
+
+    // Human Design Gates 1-64 — same 64 numbers as the Gene Keys above, but framed as a
+    // functional, bio-energetic gate on the bodygraph rather than a consciousness
+    // frequency. Distinct technical (function/keynote) + plain (lived meaning) per gate.
+    const GATE_TEACHING = {
+      1:{technical:"Gate 1 (The Creative), G Center. The drive toward individual creative self-expression — being recognized for a genuinely original contribution.",plain:"When this gate is active for you, part of your design is about expressing something authentically your own, not copied from anyone else."},
+      2:{technical:"Gate 2 (The Receptive), G Center. The gate of direction — a deep, receptive knowing of your own life's path, the 'driver' of the whole bodygraph.",plain:"When this gate is active for you, part of your design carries an inner sense of direction that others can actually feel and orient around."},
+      3:{technical:"Gate 3 (Ordering / Difficulty at the Beginning), Sacral Center. Mutative energy — the drive to bring order out of initial chaos through trial and error.",plain:"When this gate is active for you, part of your design is built to push through the messy, uncertain start of something new until real order emerges."},
+      4:{technical:"Gate 4 (Formulization / Youthful Folly), Ajna Center. Logical, formulaic answers to existential questions, needing time to mature into genuine understanding.",plain:"When this gate is active for you, part of your design generates logical answers to big questions, though those answers need time and testing to actually mature."},
+      5:{technical:"Gate 5 (Fixed Rhythms / Waiting), Sacral Center. Patterns and rhythms — the gate of natural timing and consistent, waiting-for-the-moment patterns.",plain:"When this gate is active for you, part of your design runs on steady rhythm and patience, uncomfortable when rushed or knocked out of its natural pace."},
+      6:{technical:"Gate 6 (Friction / Conflict), Solar Plexus Center. The gate of intimacy and boundaries — where emotional friction determines who and what gets let in.",plain:"When this gate is active for you, part of your design uses emotional friction as the actual gatekeeper for closeness and boundaries with others."},
+      7:{technical:"Gate 7 (The Role of the Self in Interaction / The Army), G Center. Leadership through interaction — the quiet, guiding voice of direction for a group.",plain:"When this gate is active for you, part of your design carries a natural leadership quality that shows up specifically in how you interact with others, not through force."},
+      8:{technical:"Gate 8 (Contribution / Holding Together), Throat Center. Individual style and contribution — the gate of leading by personal example.",plain:"When this gate is active for you, part of your design wants to contribute a genuinely individual example for others to notice and be inspired by."},
+      9:{technical:"Gate 9 (Focus / The Taming Power of the Small), Sacral Center. Focused energy for detail — the gate of following through on small, precise matters that serve a larger process.",plain:"When this gate is active for you, part of your design has real focus and energy for detail work that others might overlook."},
+      10:{technical:"Gate 10 (The Behavior of the Self / Treading), G Center. Authentic self-love and behavior — the gate of being naturally, unapologetically yourself.",plain:"When this gate is active for you, part of your design is about behaving as genuinely yourself in any situation, rather than performing a role."},
+      11:{technical:"Gate 11 (Ideas / Peace), Ajna Center. The gate of ideas — a generator of concepts and possibilities meant to be shared, not necessarily acted on.",plain:"When this gate is active for you, part of your design produces ideas and possibilities that are meant to be talked about and shared with others."},
+      12:{technical:"Gate 12 (Caution / Standstill), Throat Center. Selective, mood-dependent expression — the gate of knowing when the timing is actually right to speak.",plain:"When this gate is active for you, part of your design is careful about when to actually voice something, waiting for the right emotional moment."},
+      13:{technical:"Gate 13 (The Listener / Fellowship), G Center. The gate of the witness — listening to others' experiences and holding the pattern of shared human stories.",plain:"When this gate is active for you, part of your design is naturally someone people confide in and tell their stories to."},
+      14:{technical:"Gate 14 (Power Skills / Possession in Great Measure), Sacral Center. The gate of resources — generating material power and competence through skillful, sustained work.",plain:"When this gate is active for you, part of your design has real capacity to generate resources and material competence through consistent effort."},
+      15:{technical:"Gate 15 (Extremes / Modesty), G Center. The gate of humanity's diversity — embracing the full range of human behavior and rhythm without judgment.",plain:"When this gate is active for you, part of your design is naturally accepting of very different kinds of people and behavior, without needing everyone to be the same."},
+      16:{technical:"Gate 16 (Skills / Enthusiasm), Throat Center. Enthusiastic mastery through repetition — the gate of developing genuine skill through practiced, joyful experimentation.",plain:"When this gate is active for you, part of your design gets genuinely excited about developing a skill through repeated hands-on practice."},
+      17:{technical:"Gate 17 (Opinions / Following), Ajna Center. The gate of opinion — organizing observations into logical, followable conclusions.",plain:"When this gate is active for you, part of your design naturally forms opinions and logical viewpoints that others can choose to follow or not."},
+      18:{technical:"Gate 18 (Correction / Work on What Has Been Spoiled), Spleen Center. The gate of correction — an instinctive drive to identify and fix what's flawed in a system.",plain:"When this gate is active for you, part of your design has a sharp eye for what's not working and a drive to correct it."},
+      19:{technical:"Gate 19 (Wanting / Approach), Root Center. The gate of needs — sensitivity to what a relationship, tribe, or community actually requires for survival and belonging.",plain:"When this gate is active for you, part of your design is finely tuned to the needs of the people and community closest to you."},
+      20:{technical:"Gate 20 (The Now / Contemplation), Throat Center. The gate of presence — awareness and action rooted entirely in the current moment.",plain:"When this gate is active for you, part of your design operates best right here, right now, rather than through advance planning."},
+      21:{technical:"Gate 21 (The Hunter/Huntress / Biting Through), Heart Center. Willful control over material resources — the gate of taking authority over your own domain.",plain:"When this gate is active for you, part of your design wants genuine control over your own resources and affairs, not to be managed by someone else."},
+      22:{technical:"Gate 22 (Openness / Grace), Solar Plexus Center. Emotional grace in social settings — the gate of graciousness under emotional pressure.",plain:"When this gate is active for you, part of your design carries real social and emotional grace, especially when things get tense."},
+      23:{technical:"Gate 23 (Assimilation / Splitting Apart), Throat Center. The gate of the individual insight — expressing a genuinely unique idea in a way others can actually digest.",plain:"When this gate is active for you, part of your design produces unusual insights that need to be simplified before others can really take them in."},
+      24:{technical:"Gate 24 (Rationalization / Return), Ajna Center. The gate of the returning mind — reworking a thought repeatedly until real clarity or a genuinely new realization emerges.",plain:"When this gate is active for you, part of your design circles back on an idea repeatedly until it finally clicks into something new."},
+      25:{technical:"Gate 25 (The Spirit of the Self / Innocence), G Center. Universal, unconditional love — the gate of loving all experience impartially, including your own.",plain:"When this gate is active for you, part of your design carries an innocent, unconditional love that doesn't play favorites, including with yourself."},
+      26:{technical:"Gate 26 (The Trickster / Taming Power of the Great), Heart Center. Persuasive influence — the gate of marketing your own or others' value convincingly.",plain:"When this gate is active for you, part of your design is naturally persuasive, skilled at getting others to see the value in something."},
+      27:{technical:"Gate 27 (Caring / Corners of the Mouth), Sacral Center. The gate of nourishment — instinctive caretaking of others, family, and community.",plain:"When this gate is active for you, part of your design has a real instinct to nourish and take care of the people around you."},
+      28:{technical:"Gate 28 (The Game Player / Preponderance of the Great), Spleen Center. The gate of purpose through risk — finding meaning by staking something significant.",plain:"When this gate is active for you, part of your design needs a sense that life is genuinely meaningful enough to risk something for."},
+      29:{technical:"Gate 29 (Perseverance / The Abysmal), Sacral Center. The gate of commitment — saying yes to experience and following all the way through.",plain:"When this gate is active for you, part of your design is built to commit fully once it says yes, and to actually see things through."},
+      30:{technical:"Gate 30 (Feelings/Desires / The Clinging Fire), Solar Plexus Center. The gate of desire and feeling — intense emotional experience that fuels a hunger for life.",plain:"When this gate is active for you, part of your design runs on genuinely intense feelings and desires, which is a fuel, not a flaw."},
+      31:{technical:"Gate 31 (Influence / Influence), Throat Center. The gate of democratic leadership — being elected to speak for and guide a group.",plain:"When this gate is active for you, part of your design is built to be listened to — a natural voice for a group when they need direction."},
+      32:{technical:"Gate 32 (Continuity / Duration), Spleen Center. Instinctive sense of what will last — recognizing which ventures or relationships have real staying power.",plain:"When this gate is active for you, part of your design has a gut sense for what's actually built to last versus what will fail."},
+      33:{technical:"Gate 33 (Privacy / Retreat), Throat Center. The gate of reflection — withdrawing to process experience before sharing the lessons drawn from it.",plain:"When this gate is active for you, part of your design needs real time alone to process experience before you're ready to talk about it."},
+      34:{technical:"Gate 34 (Power / The Power of the Great), Sacral Center. Pure, undirected power — the greatest concentration of life-force energy in the bodygraph.",plain:"When this gate is active for you, part of your design carries enormous raw power and energy, which needs direction from other parts of your design to be used well."},
+      35:{technical:"Gate 35 (Change / Progress), Throat Center. The gate of experience — hunger for new experiences and the growth that comes from trying things out.",plain:"When this gate is active for you, part of your design craves new experience and genuinely grows through trying different things."},
+      36:{technical:"Gate 36 (Crisis / Darkening of the Light), Solar Plexus Center. Emotional intensity and crisis — the gate of turbulent feeling that leads to real human understanding.",plain:"When this gate is active for you, part of your design moves through intense emotional experiences that, over time, deepen your understanding of people."},
+      37:{technical:"Gate 37 (Friendship / The Family), Solar Plexus Center. The gate of the family and community bond — creating warmth, agreement, and belonging.",plain:"When this gate is active for you, part of your design is built around close bonds, wanting family and community relationships that feel fair and warm."},
+      38:{technical:"Gate 38 (The Fighter / Opposition), Root Center. The gate of the individual fight — the drive to struggle for something you consider genuinely worth fighting for.",plain:"When this gate is active for you, part of your design needs something worth fighting for — without that, life can feel purposeless."},
+      39:{technical:"Gate 39 (Provocation / Obstruction), Root Center. The gate of provocation — stirring emotional response in others to test and reveal what's real.",plain:"When this gate is active for you, part of your design has a knack for provoking a reaction in others that reveals something true."},
+      40:{technical:"Gate 40 (Aloneness / Deliverance), Heart Center. Willpower and the need for rest — the gate of working hard for others, then requiring real solitude to recover.",plain:"When this gate is active for you, part of your design works hard for people you care about, then genuinely needs alone time to recharge."},
+      41:{technical:"Gate 41 (Contraction / Decrease), Root Center. The gate of new beginnings — the initial pressure of imagination and fantasy that starts a new experiential cycle.",plain:"When this gate is active for you, part of your design generates a restless imagination that kicks off new chapters and experiences."},
+      42:{technical:"Gate 42 (Growth / Increase), Sacral Center. The gate of completion — finishing a cycle of growth so its lessons can be fully absorbed.",plain:"When this gate is active for you, part of your design needs to see things through to a real ending before moving on to the next thing."},
+      43:{technical:"Gate 43 (Insight / Breakthrough), Ajna Center. The gate of individual insight — a sudden, non-linear knowing that can't yet be explained logically.",plain:"When this gate is active for you, part of your design has flashes of insight that arrive complete, even before you can explain how you know."},
+      44:{technical:"Gate 44 (Alertness / Coming to Meet), Spleen Center. Instinctive recognition of people and patterns from the past — the gate of good teamwork based on gut-level trust.",plain:"When this gate is active for you, part of your design has a strong instinct for reading people quickly, based on patterns you've absorbed before."},
+      45:{technical:"Gate 45 (The Gatherer / Gathering Together), Throat Center. The gate of the ruler — gathering and directing resources for the good of the wider community.",plain:"When this gate is active for you, part of your design has a natural pull toward organizing resources and people for a shared, communal benefit."},
+      46:{technical:"Gate 46 (Determination / Pushing Upward), G Center. Love of the body and being in the right place at the right time — the gate of physical delight and serendipity.",plain:"When this gate is active for you, part of your design finds real pleasure in being physically present, and tends to end up exactly where it needs to be."},
+      47:{technical:"Gate 47 (Realization / Oppression), Ajna Center. The gate of transmuting confusion — finding meaning in the past by looking at experience from a new angle.",plain:"When this gate is active for you, part of your design processes confusing past experience by eventually finding the real meaning hidden inside it."},
+      48:{technical:"Gate 48 (Depth / The Well), Spleen Center. The gate of depth — a deep well of accumulated knowledge and skill, occasionally shadowed by self-doubt about its adequacy.",plain:"When this gate is active for you, part of your design holds a genuinely deep well of ability, even when it doesn't always feel that way in the moment."},
+      49:{technical:"Gate 49 (Principles / Revolution), Solar Plexus Center. The gate of revolution — emotional principles strong enough to reject and rebuild a relationship or system that no longer serves.",plain:"When this gate is active for you, part of your design has firm emotional principles about what's acceptable, and will reject what violates them."},
+      50:{technical:"Gate 50 (Values / The Cauldron), Spleen Center. The gate of law and values — instinctive sense of fairness and responsibility for a group's wellbeing.",plain:"When this gate is active for you, part of your design carries a strong, instinctive sense of fairness and responsibility toward a group."},
+      51:{technical:"Gate 51 (Shock / The Arousing), Heart Center. The gate of initiative through shock — meeting sudden competition or disruption with bold action.",plain:"When this gate is active for you, part of your design responds to sudden shocks or challenges with a jolt of bold initiative."},
+      52:{technical:"Gate 52 (Inaction / Keeping Still), Root Center. The gate of stillness and focus — the discipline of restraint that makes deep concentration possible.",plain:"When this gate is active for you, part of your design has real capacity for stillness and focused concentration when it's actually needed."},
+      53:{technical:"Gate 53 (Beginnings / Development), Root Center. The gate of starting — pressure to begin new cycles, needing follow-through from elsewhere in the design to complete them.",plain:"When this gate is active for you, part of your design loves starting new things, though finishing them often needs support from other parts of your design."},
+      54:{technical:"Gate 54 (Ambition / The Marrying Maiden), Root Center. The gate of drive — ambition to rise, improve status, and transform circumstances through real effort.",plain:"When this gate is active for you, part of your design carries real drive to improve your circumstances and rise through genuine effort."},
+      55:{technical:"Gate 55 (Spirit / Abundance), Solar Plexus Center. The gate of emotional freedom — the capacity to experience abundant, self-generated emotional states independent of circumstance.",plain:"When this gate is active for you, part of your design has the capacity for emotional states that don't depend on outside circumstances lining up first."},
+      56:{technical:"Gate 56 (Stimulation / The Wanderer), Throat Center. The gate of the storyteller — restless curiosity that turns experience into stories worth sharing.",plain:"When this gate is active for you, part of your design is a natural storyteller, always gathering experience to share with others."},
+      57:{technical:"Gate 57 (Intuitive Clarity / The Gentle), Spleen Center. The gate of intuition — clear, in-the-moment gut knowing about safety and the immediate future.",plain:"When this gate is active for you, part of your design has sharp, immediate intuition that's most reliable moment to moment, not planned in advance."},
+      58:{technical:"Gate 58 (Vitality / The Joyous), Root Center. The gate of aliveness — a critical, improvement-driven energy that fuels genuine joy in life.",plain:"When this gate is active for you, part of your design has a restless, improvement-seeking energy that, when channeled well, becomes real vitality and joy."},
+      59:{technical:"Gate 59 (Sexuality / Dispersion), Sacral Center. The gate of intimacy — breaking down social barriers to create genuine closeness and bonding.",plain:"When this gate is active for you, part of your design is oriented toward breaking down the walls between people to create real intimacy."},
+      60:{technical:"Gate 60 (Acceptance / Limitation), Root Center. The gate of limitation — accepting real constraints as the foundation that allows new structures to be built.",plain:"When this gate is active for you, part of your design works best when it accepts actual limits as a starting point, rather than resenting them."},
+      61:{technical:"Gate 61 (Mystery / Inner Truth), Head Center. The gate of inner knowing — pressure to understand life's deepest mysteries, some of which resist full explanation.",plain:"When this gate is active for you, part of your design is genuinely fascinated by life's big mysteries, even the ones that can't be fully explained."},
+      62:{technical:"Gate 62 (Details / Preponderance of the Small), Throat Center. The gate of precision — expressing facts and details clearly enough that logic can be genuinely followed.",plain:"When this gate is active for you, part of your design is good at expressing things through clear, well-organized detail."},
+      63:{technical:"Gate 63 (Doubt / After Completion), Head Center. The gate of questioning — pressure to doubt and test existing patterns to confirm whether they're actually still true.",plain:"When this gate is active for you, part of your design has a healthy skepticism that questions whether things are really working the way everyone assumes."},
+      64:{technical:"Gate 64 (Confusion / Before Completion), Head Center. The gate of mental pressure — pressure from unprocessed past impressions seeking new meaning.",plain:"When this gate is active for you, part of your design carries mental pressure from a flood of past impressions, looking for a new way to make sense of them."},
     };
 
     const HD_TYPE_DESC = {
@@ -1841,6 +2055,41 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       9:{technical:"Missing 9 in the name chart suggests compassion beyond immediate self-interest is undeveloped by default.",plain:"Genuinely caring about outcomes that don't benefit him directly is a capacity he's had to develop rather than one he started with."},
     };
 
+    // Pinnacle numbers — the dominant opportunity/theme of each of the four life-cycle
+    // phases (age ranges computed server-side from Life Path). Distinct from the core
+    // Expression/Life Path meanings — this describes what the PERIOD is asking of you.
+    // Keyed by the pinnacle's NUMBER (1-9, 11, 22, 33), not by which of the four periods
+    // it occupies — the same number can appear as Pinnacle 1 for one client and Pinnacle 3
+    // for another. The detail modal shows the period index/age range separately.
+    const PINNACLE_MEANINGS = {
+      1:{technical:"As a pinnacle theme, the number 1 orients this life phase around establishing independence and personal initiative.",plain:"This stretch of life tends to be about learning to stand on your own — making your own decisions and building genuine self-reliance, often through being pushed to figure things out yourself."},
+      2:{technical:"As a pinnacle theme, the number 2 orients this life phase around patience, partnership, and cooperative skill-building.",plain:"This stretch of life tends to move slower and ask for patience — learning to work well with others, negotiate, and wait for the right timing rather than forcing outcomes."},
+      3:{technical:"As a pinnacle theme, the number 3 orients this life phase around creative self-expression and social ease.",plain:"This stretch of life tends to open up socially and creatively — a period for putting yourself out there, communicating, and enjoying life more visibly."},
+      4:{technical:"As a pinnacle theme, the number 4 orients this life phase around building tangible, lasting structure.",plain:"This stretch of life tends to be about the practical work of building something solid — career, finances, or a stable foundation — through sustained, unglamorous effort."},
+      5:{technical:"As a pinnacle theme, the number 5 orients this life phase around change, freedom, and expanded experience.",plain:"This stretch of life tends to bring unexpected change and a pull toward new experiences — resisting it usually creates more friction than moving with it."},
+      6:{technical:"As a pinnacle theme, the number 6 orients this life phase around responsibility to family, home, and community.",plain:"This stretch of life tends to center on caring for others — home, family, or close community responsibilities move to the foreground."},
+      7:{technical:"As a pinnacle theme, the number 7 orients this life phase around introspection, study, and inner development.",plain:"This stretch of life tends to pull inward — a period for research, solitude, and developing genuine expertise or spiritual depth rather than outward achievement."},
+      8:{technical:"As a pinnacle theme, the number 8 orients this life phase around material achievement, authority, and power.",plain:"This stretch of life tends to bring real opportunities for material and professional advancement — the period rewards ambition and decisive action."},
+      9:{technical:"As a pinnacle theme, the number 9 orients this life phase around completion, release, and humanitarian concern.",plain:"This stretch of life tends to involve closing chapters and letting go of what's run its course, alongside a widening concern for something beyond just yourself."},
+      11:{technical:"As a pinnacle theme, the master number 11 orients this life phase around heightened intuition and spiritual visibility, operating at elevated sensitivity.",plain:"This stretch of life tends to run at a more intense, sensitive frequency — inspiration and insight are heightened, but so is the need to manage that sensitivity carefully."},
+      22:{technical:"As a pinnacle theme, the master number 22 orients this life phase around large-scale, practical building — the master number's vision made concrete.",plain:"This stretch of life carries real potential to build something that outlasts you — the challenge is turning big vision into patient, practical steps rather than staying stuck in the scale of it."},
+      33:{technical:"As a pinnacle theme, the master number 33 orients this life phase around selfless service and compassionate teaching, the rarest pinnacle frequency.",plain:"This stretch of life tends to center on giving to and uplifting others — the work here is making sure that generosity doesn't come at the total expense of your own needs."},
+    };
+
+    // Keyed by the challenge's NUMBER (0-8, a digit difference), not by which of the four
+    // periods it occupies — same reasoning as PINNACLE_MEANINGS above.
+    const CHALLENGE_MEANINGS = {
+      0:{technical:"As a challenge theme, 0 means no fixed obstacle number — this period offers open choice among all challenge themes rather than one fixed lesson.",plain:"This period doesn't hand you one specific obstacle — it's more about the discipline of choosing your own path deliberately, since nothing is forcing a particular lesson on you."},
+      1:{technical:"As a challenge theme, 1 centers on overcoming dependency and fear of standing alone.",plain:"The friction in this period tends to involve learning to trust your own judgment instead of leaning on others or hesitating out of fear of being wrong."},
+      2:{technical:"As a challenge theme, 2 centers on overcoming oversensitivity and fear of conflict.",plain:"The friction in this period tends to involve not taking things too personally, and finding the courage to speak up instead of just going along to avoid tension."},
+      3:{technical:"As a challenge theme, 3 centers on overcoming scattered energy and self-doubt in self-expression.",plain:"The friction in this period tends to involve staying focused enough to actually finish and share what you start, instead of getting scattered or talking yourself out of it."},
+      4:{technical:"As a challenge theme, 4 centers on overcoming resistance to structure and discipline.",plain:"The friction in this period tends to involve building real routines and follow-through, even when structure feels restrictive or unwelcome."},
+      5:{technical:"As a challenge theme, 5 centers on overcoming impulsiveness and misuse of freedom.",plain:"The friction in this period tends to involve handling change and freedom responsibly, instead of using it as an excuse to avoid commitment."},
+      6:{technical:"As a challenge theme, 6 centers on overcoming excessive responsibility and perfectionism toward others.",plain:"The friction in this period tends to involve caring for others without over-controlling them or sacrificing your own needs to do it."},
+      7:{technical:"As a challenge theme, 7 centers on overcoming isolation and difficulty trusting others.",plain:"The friction in this period tends to involve staying connected to people even while doing the deep, solitary inner work this period pulls you toward."},
+      8:{technical:"As a challenge theme, 8 centers on overcoming misuse of power and an unbalanced relationship with money or authority.",plain:"The friction in this period tends to involve learning to handle power, money, or authority fairly, without swinging between avoiding it and abusing it."},
+    };
+
     function buildDataDetailHtml(obj) {
       const { type } = obj;
       function sec(label, content, col="text-violet2-soft", bg="bg-violet2/5", br="border-violet2/20") {
@@ -1896,9 +2145,10 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       }
 
       if (type === "vedic_graha") {
-        const { glyph, name, rashi, position, nakshatra, nakshatra_lord, pada, retrograde } = obj;
+        const { glyph, name, rashi, sign, position, nakshatra, nakshatra_lord, pada, retrograde } = obj;
         const pd = PLANET_DESC[name] || {};
         const nd = NAKSHATRA_DESC[nakshatra] || "Ancient lunar mansion rich in symbolic meaning.";
+        const rd = RASHI_DESC[sign] || "";
         const padaSign = ["Aries","Taurus","Gemini","Cancer"][pada-1]||"";
         const padaQuality = ["initiative and courage","stability and material focus","communication and adaptability","emotional and intuitive depth"][pada-1]||"";
         return `<div class="mb-5 flex items-center gap-4"><span class="font-display text-5xl text-violet2-soft">${glyph}</span>
@@ -1907,8 +2157,43 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
           <p class="text-xs text-slate-500 font-mono">${position}</p></div></div>
           <div class="space-y-3">
             ${sec(`${name} governs`, pd.governs||"—")}
-            ${goldSec(`${nakshatra} Nakshatra`, `Ruled by ${nakshatra_lord}. ${nd}`)}
+            ${rd ? goldSec(`${rashi} Rashi`, rd) : ""}
+            ${greenSec(`${nakshatra} Nakshatra`, `Ruled by ${nakshatra_lord}. ${nd}`)}
             ${greySec(`Pada ${pada} — ${padaSign} navamsha`, `Each nakshatra's four padas map to Aries → Cancer in sequence. Pada ${pada} brings ${padaQuality} to this placement.`)}
+          </div>`;
+      }
+
+      if (type === "vedic_lagna") {
+        const { rashi, sign, nakshatra, pada, position } = obj;
+        const rd = RASHI_DESC[sign] || "";
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">Lagna in ${rashi}</h3>
+          <p class="text-sm text-slate-400">${nakshatra} · Pada ${pada}</p>
+          <p class="text-xs text-slate-500 font-mono mt-0.5">${position}</p></div>
+          <div class="space-y-3">
+            ${sec("What the Lagna is", "The Lagna (Ascendant) is the exact sidereal zodiac degree rising on the eastern horizon at the moment of birth. It anchors the entire Vedic birth chart — every house is measured from this point.")}
+            ${rd ? goldSec(`${rashi} Rashi`, rd) : ""}
+            ${greenSec("What this means for you", `Your Lagna sets the first house of your chart and colors how you meet the world — your physical presence, temperament, and the lens through which every other placement in your chart is read.`)}
+          </div>`;
+      }
+
+      if (type === "vedic_ayanamsa") {
+        const { value, name } = obj;
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${value}</h3>
+          <p class="text-sm text-slate-400">${name} Ayanamsa</p></div>
+          <div class="space-y-3">
+            ${sec("What the ayanamsa is", "The ayanamsa is the angular offset between the tropical zodiac (based on the seasons and the equinox) and the sidereal zodiac (based on the actual fixed background of stars). Because of the slow precession of the equinoxes, this gap grows by roughly 1 degree every 72 years.")}
+            ${goldSec(`Why ${name}`, `${name} is the most widely used ayanamsa in Vedic astrology, anchored to a specific historical alignment of the star Spica (Chitra) with 0° Libra. Every sidereal placement in this chart — every rashi and nakshatra — is calculated by subtracting this value from the tropical position.`)}
+          </div>`;
+      }
+
+      if (type === "vedic_mahadasha") {
+        const { lord } = obj;
+        const md = MAHADASHA_DESC[lord] || "";
+        return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">${lord || "—"} Mahadasha</h3>
+          <p class="text-sm text-slate-400">Starting dasha lord at birth</p></div>
+          <div class="space-y-3">
+            ${sec("What a Mahadasha is", "In Vedic astrology, the Vimshottari Dasha system divides a full 120-year life cycle into nine sequential planetary periods (Mahadashas), calculated from the Moon's exact nakshatra position at birth. Whichever planet's period is active colors the themes of that whole chapter of life.")}
+            ${md ? goldSec(`${lord} Mahadasha themes`, md) : ""}
           </div>`;
       }
 
@@ -1949,12 +2234,15 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
 
       if (type === "hd_gate") {
         const { glyph, body, notation, gate_name, zodiac } = obj;
+        const gateNum = parseInt(String(notation).split(".")[0], 10);
+        const gt = GATE_TEACHING[gateNum] || {};
         return `<div class="mb-5 flex items-center gap-4"><span class="font-display text-4xl text-gold-soft">${glyph}</span>
           <div><h3 class="font-display text-2xl gold-text">Gate ${notation}</h3>
           <p class="text-sm text-slate-300">${gate_name}</p>
           <p class="text-xs text-slate-500 mt-0.5">${body} · ${zodiac}</p></div></div>
           <div class="space-y-3">
-            ${goldSec("Gate meaning", `Gate ${notation} — ${gate_name}. Each Human Design gate corresponds to one of the 64 hexagrams of the I Ching. This gate carries a specific archetypal energy pattern that is active in your design.`)}
+            ${goldSec("What this gate is", gt.technical || `Gate ${notation} — ${gate_name}. Each Human Design gate corresponds to one of the 64 hexagrams of the I Ching. This gate carries a specific archetypal energy pattern that is active in your design.`)}
+            ${greenSec("What this means for you", gt.plain || "This gate is active in your design and contributes its energy to your bodygraph, whether or not its channel partner is also defined.")}
             ${greySec("Planetary body", `Activated by ${body}. Personality gates (red) are conscious; Design gates (black) are unconscious body-level influences. A gate needs its channel partner to form a complete circuit.`)}
             ${greySec("Zodiac position", `${zodiac} — the tropical zodiac position of this activation.`)}
           </div>`;
@@ -1962,6 +2250,7 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
 
       if (type === "gene_key") {
         const { gene_key, name, shadow, gift, siddhi, sources, sphere } = obj;
+        const gk = GENE_KEY_TEACHING[gene_key] || {};
         return `<div class="mb-5"><h3 class="font-display text-2xl gold-text">Gene Key ${gene_key} · ${name}</h3>
           ${sphere?`<p class="text-sm text-violet2-soft mt-1">${sphere}</p>`:""}
           ${sources?`<p class="text-xs text-slate-500 mt-0.5">Activated by: ${sources.join(", ")}</p>`:""}</div>
@@ -1969,17 +2258,17 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
             <div class="rounded-xl bg-charcoal-950/50 border border-charcoal-700/40 p-4">
               <p class="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Shadow frequency</p>
               <p class="font-display text-xl text-slate-400">${shadow}</p>
-              <p class="mt-1 text-xs text-slate-500">The low-frequency expression — unconscious, fear-based pattern to recognize and embrace.</p>
+              <p class="mt-1 text-xs text-slate-400 leading-relaxed">${gk.shadow_text || "The low-frequency expression — unconscious, fear-based pattern to recognize and embrace."}</p>
             </div>
             <div class="rounded-xl bg-violet2/5 border border-violet2/20 p-4">
               <p class="text-[10px] uppercase tracking-wider text-violet2-soft mb-1">Gift frequency</p>
               <p class="font-display text-xl text-slate-200">${gift}</p>
-              <p class="mt-1 text-xs text-slate-400">Emerges when the shadow is embraced — conscious expression of this frequency.</p>
+              <p class="mt-1 text-xs text-slate-300 leading-relaxed">${gk.gift_text || "Emerges when the shadow is embraced — conscious expression of this frequency."}</p>
             </div>
             <div class="rounded-xl bg-gold/5 border border-gold/30 p-4">
               <p class="text-[10px] uppercase tracking-wider text-gold-soft mb-1">Siddhi frequency</p>
               <p class="font-display text-xl gold-text">${siddhi}</p>
-              <p class="mt-1 text-xs text-slate-400">The highest potential — pure divine expression of this archetypal energy.</p>
+              <p class="mt-1 text-xs text-slate-300 leading-relaxed">${gk.siddhi_text || "The highest potential — pure divine expression of this archetypal energy."}</p>
             </div>
           </div>`;
       }
@@ -2038,6 +2327,32 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
         <div class="space-y-3">
           ${goldSec("Technically, what this means", kl?.technical || "This karmic lesson number is not yet in the reference table.")}
           ${greenSec("In plain terms", kl?.plain || "")}
+        </div>`;
+      }
+
+      if (type === "numerology_pinnacle") {
+        const { index, number, age_range } = obj;
+        const pm = PINNACLE_MEANINGS[number];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-violet2-soft">Pinnacle ${index} ${age_range ? "· " + age_range : ""}</p>
+          <div class="mt-3 font-display text-6xl gold-text">${number}</div>
+        </div>
+        <div class="space-y-3">
+          ${goldSec("What this life phase is about", pm?.technical || "This pinnacle number is not yet in the reference table.")}
+          ${greenSec("In plain terms", pm?.plain || "")}
+        </div>`;
+      }
+
+      if (type === "numerology_challenge") {
+        const { index, number, age_range } = obj;
+        const cm = CHALLENGE_MEANINGS[number];
+        return `<div class="mb-5 text-center">
+          <p class="text-[10px] uppercase tracking-wider text-amber-500/80">Challenge ${index} ${age_range ? "· " + age_range : ""}</p>
+          <div class="mt-3 font-display text-6xl gold-text">${number}</div>
+        </div>
+        <div class="space-y-3">
+          ${goldSec("What friction this life phase asks you to work through", cm?.technical || "This challenge number is not yet in the reference table.")}
+          ${greenSec("In plain terms", cm?.plain || "")}
         </div>`;
       }
 

@@ -2039,4 +2039,5 @@ def adapt(report: BlueprintReport) -> dict:
         "numerology": numerology,
         "astrology": astrology,
         "synthesis": synthesis,
+        "big_five": report.big_five,
     }

@@ -1303,6 +1303,31 @@
         return L.join("\n");
       }
 
+      function buildBigFive() {
+        const L = [];
+        L.push("[ DISCLAIMER ]");
+        L.push("This is an interpretive framework, not a statistically validated psychometric instrument.");
+        L.push("No correlation coefficients are implied. This layer maps existing blueprint data to Big Five traits.");
+        L.push("");
+        const bf = d.big_five || {};
+        const traits = ["agreeableness", "conscientiousness", "extraversion", "openness", "emotional_stability"];
+        traits.forEach(t => {
+          const trait = bf[t];
+          if (!trait) return;
+          L.push(`[ ${trait.trait.toUpperCase()} ]`);
+          L.push(trait.description);
+          L.push("");
+          (trait.entries||[]).forEach(e => {
+            const tier_label = e.tier === 1 ? "PRIMARY" : e.tier === 2 ? "MODULATING" : "DEEP/QUIET";
+            L.push(b(`${tier_label} — ${e.system}/${e.field}`, e.value));
+            L.push(`  ${e.technical}`);
+            L.push(`  → ${e.plain}`);
+          });
+          L.push("");
+        });
+        return L.join("\n");
+      }
+
       // ── assemble sections ────────────────────────────────────────────────
       const SECTIONS = [
         { title: "BIRTH INFORMATION",            text: buildBirth()         },
@@ -1312,6 +1337,7 @@
         { title: "HUMAN DESIGN",                 text: buildHumanDesign()   },
         { title: "GENE KEYS",                    text: buildGeneKeys()      },
         { title: "COMMUNICATION PROFILE",        text: buildCommunication() },
+        { title: "BIG FIVE TRAITS",              text: buildBigFive()       },
         { title: "SYNTHESIS",                    text: buildSynthesis()     },
       ];
 

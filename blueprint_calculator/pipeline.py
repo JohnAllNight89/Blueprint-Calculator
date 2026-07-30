@@ -109,7 +109,7 @@ def run_pipeline(
     communication_result = record_communication(numerology_result, western_result, hd_result, gk_result)
 
     # Big Five traits (read-only interpretive layer)
-    big_five_result = record_big_five(numerology_result, hd_result, western_result)
+    big_five_result = record_big_five(numerology_result, hd_result, western_result, gk_result, vedic_result)
 
     return BlueprintReport(
         name=name, birth_date=birth_date, birth_time=birth_time, birth_place=birth_place,

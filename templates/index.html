@@ -1003,9 +1003,14 @@
           const didAttr = _da({
             type: "bigfive_entry", trait: trait.trait, tier_label: tierLabel,
             system: e.system, field: e.field, value: e.value,
-            technical: e.technical, plain: e.plain,
+            technical: e.technical, plain: e.plain, register_note: e.register_note || null,
             _title: `${e.system}/${e.field}`, _subtitle: `${trait.trait} · ${tierLabel}`,
           });
+          const registerHtml = e.register_note ? `
+              <div class="mt-2 rounded-lg border border-violet2/20 bg-violet2/5 p-2.5">
+                <p class="text-[9px] uppercase tracking-wider text-violet2-soft">Register — ${e.register_note.sphere} Gate ${e.register_note.gate} (${e.register_note.gate_name})</p>
+                <p class="mt-1 text-xs text-slate-300 leading-relaxed">${e.register_note.plain}</p>
+              </div>` : "";
           return `
             <div class="rounded-xl bg-charcoal-950/50 p-4 cursor-pointer hover:border-gold/40 hover:bg-charcoal-900/60 border border-transparent transition" ${didAttr} title="Click to learn more">
               <p class="flex flex-wrap items-baseline justify-between gap-2">
@@ -1014,6 +1019,7 @@
               </p>
               <p class="mt-2 text-xs text-slate-400 leading-relaxed">${e.technical}</p>
               <p class="mt-1 text-sm text-slate-200 leading-relaxed">→ ${e.plain}</p>
+              ${registerHtml}
             </div>`;
         }).join("");
 
@@ -1929,12 +1935,16 @@ const activeTab = document.querySelector("#tab-bar .tab-active");
       }
 
       if (type === "bigfive_entry") {
-        const { trait, tier_label, system: sys, field, value, technical, plain } = obj;
+        const { trait, tier_label, system: sys, field, value, technical, plain, register_note } = obj;
+        const registerSec = register_note
+          ? sec(`Register — ${register_note.sphere} Gate ${register_note.gate} (${register_note.gate_name})`, register_note.plain)
+          : "";
         return `<div class="mb-5"><p class="text-xs text-violet2-soft uppercase tracking-wider">${trait} · ${tier_label}</p>
           <h3 class="font-display text-2xl gold-text mt-1">${sys}/${field}: ${value}</h3></div>
           <div class="space-y-3">
             ${goldSec("Technical basis", technical)}
             ${greySec("Plain language", plain)}
+            ${registerSec}
             ${sec("Framework note", "This is an interpretive mapping, not a validated psychometric result — no correlation coefficients or clinical claims are implied.")}
           </div>`;
       }

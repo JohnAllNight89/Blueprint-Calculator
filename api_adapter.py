@@ -1893,19 +1893,26 @@ def _build_synthesis_panels(report: BlueprintReport, vs: str) -> dict:
 
     # Core Identity paragraph
     core_id_text = (
-        f"Here is who arrived on {report.birth_date}: a Life Path {lp} — {lp_arch} — "
-        f"whose recurring life theme is {lp_theme}. "
-        f"Not a role chosen consciously. A frequency encoded before there was a name for it. "
-        f"The {sun} Sun is the conscious identity growing more fully into itself with each decade. "
-        f"The {asc} Ascendant is the first thing the world encounters — the threshold, not the performance. "
-        f"In the body: a {hd_type}. The operative instruction is {strategy} — "
-        f"not a rule to follow consciously, but a rhythm that, when honored, removes friction from the path. "
-        f"Vedic astronomy places the Moon in {moon_rashi_sk} in the {moon_nak} nakshatra — "
-        f"the interior register from which all emotional processing begins, before thought or choice enters. "
-        f"At the Gene Keys level, Gate {lw_gate} ({lw_name}) is the Life's Work: "
-        f"the frequency this soul came to express, in whatever form it takes. "
-        f"Five systems. One birth moment. The same conclusion each time. "
-        f"That level of convergence is not coincidence — it is emphasis."
+        f"Let's start with what's actually written into your birth moment, because nothing here is guesswork — "
+        f"it's what five separate systems, calculated independently from the same birth date, time, and place, all arrive at on their own. "
+        f"Your Life Path is {lp} — {lp_arch}. In plain terms, that number describes the theme your whole life keeps circling back to: {lp_theme}. "
+        f"You've probably lived this out in ordinary moments without ever naming it — the role you keep ending up in at work, the kind of problem people "
+        f"bring to you specifically, the thing you can't stop noticing even on days you'd rather not think about it. That's the Life Path, quietly running "
+        f"underneath an otherwise ordinary Tuesday. "
+        f"Your Sun sits in {sun}. That's the part of you still under construction — the identity you're actively growing into a little more with each year, "
+        f"more fully expressed now than it was a decade ago, and it isn't finished yet. "
+        f"Your Ascendant is {asc} — this is the very first impression you make, before you've said a word or explained anything about yourself. "
+        f"It's what a stranger picks up on in the first few seconds of meeting you, and it's often a different read than the one people get once they actually "
+        f"know you. "
+        f"In Human Design terms, you're a {hd_type}, and your strategy — {strategy} — isn't a rule you consciously follow so much as a rhythm your energy "
+        f"already runs on: when you move with it, things tend to open with less effort than you'd expect; push against it, and the friction usually shows up "
+        f"almost immediately, even when you can't quite say why. "
+        f"Vedically, your Moon sits in {moon_rashi_sk}, in the {moon_nak} nakshatra — this is your emotional operating system, the layer that reacts before "
+        f"your thinking mind has even caught up. It's what you feel first, in your body, before you've had a chance to decide how you feel about it. "
+        f"And at the Gene Keys level, Gate {lw_gate} ({lw_name}) is your Life's Work — the specific frequency you're here to put into the world, in whatever "
+        f"shape your actual day-to-day life happens to take. "
+        f"Five different systems, five different vocabularies, all describing the same person. That's not a coincidence worth shrugging off — "
+        f"it's the strongest kind of evidence a reading like this can offer: the same signal, arriving independently, from every direction at once."
     )
     core_id_sources = [
         f"Numerology: Life Path {lp} ({lp_arch})",
@@ -1917,95 +1924,99 @@ def _build_synthesis_panels(report: BlueprintReport, vs: str) -> dict:
 
     # Synthesized Strengths
     _ELEM_TALENT: dict[str, str] = {
-        "Fire": "igniting enthusiasm and momentum — energizing to others and catalytic in groups",
-        "Earth": "building tangible, lasting results — steady under pressure, the one others rely on when things need to hold",
-        "Air": "synthesizing and communicating ideas — the ability to explain complex things with unusual clarity",
-        "Water": "reading emotional subtext — the intelligence that senses what's happening beneath the surface of any exchange",
+        "Fire": "you bring energy into a room just by walking into it — the people around you tend to get more motivated, not less, once you're actually engaged in something, which is a genuinely rare effect to have on other people",
+        "Earth": "you're the one still standing, calm, once everyone else's plans have fallen apart — not because you don't feel the pressure, but because you were built to hold weight without needing to make a show of it",
+        "Air": "you can take something genuinely complicated and hand it back in a way that makes someone say 'oh, that's actually simple' — that's a real skill, not a small one, and it's why people keep asking you to explain things",
+        "Water": "you tend to know something's off in a room before anyone's said a word about it — a shift in someone's tone, a look that lasted half a second too long — and you're usually right, even when you can't point to exactly what tipped you off",
     }
     _TYPE_STRENGTH: dict[str, str] = {
-        "Generator": "the capacity for deep, sustained mastery — when genuinely engaged, the energy is renewable and others feel it as reliable life-force",
-        "Manifesting Generator": "multi-dimensional velocity — pioneering several lanes simultaneously while showing others what's possible before asking permission",
-        "Projector": "penetrating insight into systems and people — wisdom earned through deep observation that others receive as guidance rather than opinion",
-        "Manifestor": "initiatory power — the rare ability to catalyze new realities without needing external approval, opening doors others then walk through",
-        "Reflector": "deep attunement to the collective field — sampling and reflecting the full spectrum of human experience with the wisdom of a month-long cycle",
+        "Generator": "a genuinely renewable kind of energy, but only for work you actually enjoy. Think of the difference between a task that drains you by mid-afternoon and one you could keep doing for hours without noticing the time — that second feeling isn't random, it's your design confirming you're on the right track",
+        "Manifesting Generator": "the ability to move fast across more than one thing at once. Where most people need to finish A before starting B, you can genuinely run both — and the shortcuts you take usually aren't cutting corners, they're just your process working the way it's supposed to",
+        "Projector": "a kind of insight that comes from watching rather than doing. You tend to see what's actually happening in a group or a system faster than the people standing inside it do, the same way it's easier to spot a play developing from the sideline than from the middle of the field",
+        "Manifestor": "the ability to just start something, cleanly, without waiting for a committee to sign off first. Most people wait for a permission that never fully arrives — you're built to move, and let the world catch up around you",
+        "Reflector": "an unusually accurate read on the health of whatever room you're standing in. You're picking up something real that most people miss entirely — even if it sometimes leaves you unsure which feelings started with you and which ones you picked up on the way in",
     }
     strengths_list = []
     if lp and lp_arch:
         strengths_list.append({
-            "text": f"Life Path {lp} — {lp_arch}: {lp_theme.capitalize()}. This thread runs through every major chapter of your life whether you recognized it as such or not. It is the frequency you carry, not the role you perform.",
+            "text": f"Your Life Path is {lp} — {lp_arch}. {lp_theme.capitalize()} isn't a phase you're passing through, it's a thread that keeps reappearing across totally different chapters of your life — different jobs, different relationships, sometimes different cities — because it was never really about the circumstances. If you look back at the moments that actually felt meaningful, this is very likely the reason why.",
             "sources": [f"Numerology: Life Path {lp}"],
         })
     if hd_type:
         strengths_list.append({
-            "text": f"As a {hd_type}: {_TYPE_STRENGTH.get(hd_type, 'a unique energetic intelligence that others sense before it is named')}. Not a style preference — the architecture of how your energy actually moves.",
+            "text": f"You're a {hd_type} in Human Design terms, and that comes with a specific, built-in gift: {_TYPE_STRENGTH.get(hd_type, 'a unique energetic intelligence that others tend to sense before they can put a name to it')}. This isn't a personality quirk — it's the actual architecture of how your energy moves through the day.",
             "sources": [f"Human Design: {hd_type}"],
         })
     if dom_elem:
         strengths_list.append({
-            "text": f"{dom_elem}-dominant chart: {_ELEM_TALENT.get(dom_elem, 'a balanced elemental field that covers the spectrum')}. This is the elemental register you operate in naturally — the gift that functions without effort.",
+            "text": f"Your chart leans heavily {dom_elem} — it's the dominant element across your placements. In practice: {_ELEM_TALENT.get(dom_elem, 'you draw from a fairly balanced elemental field, able to shift registers as the moment calls for it')}. This is the register you operate in without having to try.",
             "sources": [f"Western Astrology: {dom_elem} element dominant"],
         })
     if lw_gate and lw_gift:
         strengths_list.append({
-            "text": f"Life's Work Gate {lw_gate} ({lw_name}) — the Gift of {lw_gift}: the frequency that emerges when the Shadow of {lw_shadow} is no longer running the show. You broadcast this from your Personality Sun whether you are aware of it or not.",
+            "text": f"Your Life's Work is Gate {lw_gate} ({lw_name}), and its Gift — {lw_gift} — is what naturally comes online once the {lw_shadow} pattern stops running the show. It's broadcast from your Sun, the most visible part of your design, which means it shows up whether or not you're consciously trying to access it. The people who actually know you have probably already felt this in you, even without a name for it.",
             "sources": [f"Gene Keys: Gate {lw_gate}", "Human Design: Personality Sun"],
         })
 
     # Synthesized Shadow
     _RAHU_CHAL: dict[str, str] = {
-        "Mesha (Aries)": "initiating before the integration is complete — can read as impulsive rather than pioneering",
-        "Vrishabha (Taurus)": "over-accumulating for security at the cost of movement and growth",
-        "Mithuna (Gemini)": "scattered attention that prevents the depth this life is actually reaching toward",
-        "Karka (Cancer)": "emotional overwhelm when the sense of belonging feels uncertain",
-        "Simha (Leo)": "dependency on external recognition when the soul is learning to generate it from within",
-        "Kanya (Virgo)": "perfectionism that prevents completion or sharing of what's been built",
-        "Tula (Libra)": "over-adapting to others at the cost of personal clarity and direction",
-        "Vrishchika (Scorpio)": "intensity that can trigger power dynamics or isolate what needs connection",
-        "Dhanu (Sagittarius)": "perpetual search for meaning that bypasses commitment to any single direction",
-        "Makara (Capricorn)": "measuring worth through achievement when the actual curriculum is inner development",
-        "Kumbha (Aquarius)": "detachment from the personal and intimate when collective causes feel more real",
-        "Meena (Pisces)": "boundary dissolution and absorbing emotional states that aren't yours",
+        "Mesha (Aries)": "jumping into things before you've actually thought them through, which can look like impulsiveness from the outside even though it's really an unfinished pioneer instinct",
+        "Vrishabha (Taurus)": "holding onto what already feels safe a little too tightly, sometimes at the cost of the next real step forward",
+        "Mithuna (Gemini)": "getting pulled in five directions at once, which can quietly keep you from ever going deep enough into the one thing that would actually satisfy you",
+        "Karka (Cancer)": "feeling flooded when you're not sure you belong somewhere — the uncertainty itself becomes the hardest part, more than whatever actually happened",
+        "Simha (Leo)": "needing someone else to notice you before you'll fully believe in yourself, when the real work is learning to generate that confidence from the inside",
+        "Kanya (Virgo)": "polishing something for so long it never actually gets finished or shared, because it never quite feels ready",
+        "Tula (Libra)": "bending toward whoever you're with until you lose track of what you actually wanted in the first place",
+        "Vrishchika (Scorpio)": "an intensity that can push people away right when you need them closest, or turn into a power struggle instead of the connection you were actually looking for",
+        "Dhanu (Sagittarius)": "always reaching for the next, bigger meaning instead of committing to the one already right in front of you",
+        "Makara (Capricorn)": "measuring your worth by what you've achieved, when the actual work this lifetime is asking for is quieter and more internal than that",
+        "Kumbha (Aquarius)": "caring so much about the big picture and the collective that the people closest to you can end up feeling like an afterthought",
+        "Meena (Pisces)": "losing track of where you end and someone else's feelings begin",
     }
     shadow_list = [
         {
-            "text": f"Life Path {lp}: {lp_pull}. This is not a character flaw — it is the specific friction that forges the character your path requires to operate at full voltage. The tension is not incidental to the design. It is the design.",
+            "text": f"Your Life Path is {lp}, and the friction that comes with it is real: {lp_pull}. It's tempting to read that as a flaw — something to apologize for or fix — but it's closer to the resistance a muscle actually needs in order to get stronger. Take the friction away, and you'd also be taking away the thing that's building your capacity for whatever this path is actually asking of you.",
             "sources": [f"Numerology: Life Path {lp}"],
         },
     ]
     if rahu_sk:
         shadow_list.append({
-            "text": f"Rahu in {rahu_sk}: the soul's growth edge carries the pattern of {_RAHU_CHAL.get(rahu_rashi, 'navigating genuinely new territory without the fluency accumulated elsewhere')}. The discomfort is not a warning sign. It is the precise feeling of growth itself.",
+            "text": f"In Vedic astrology, your Rahu — the point that shows what this lifetime is actually growing you toward — sits in {rahu_sk}. The pattern that tends to show up along the way: {_RAHU_CHAL.get(rahu_rashi, 'navigating genuinely new territory without the fluency you already have in other areas of life')}. The discomfort you feel around this isn't a sign something's wrong. It's usually the opposite — it's what growth into real new territory actually feels like while it's happening.",
             "sources": [f"Vedic Astrology: Rahu in {rahu_sk}"],
         })
     if lw_shadow:
         shadow_list.append({
-            "text": f"Life's Work Shadow — {lw_shadow}: the low-frequency expression of Gate {lw_gate}. Not the enemy. The doorway. The Gift of {lw_gift} lives on the other side of honest engagement with this pattern. Not effort — honest attention.",
+            "text": f"Gate {lw_gate}'s Shadow frequency is {lw_shadow}, and it's worth understanding this correctly: it isn't a character flaw, and it isn't the enemy. It's the doorway. The Gift of {lw_gift} you actually want is sitting on the other side of being honest with yourself about when {lw_shadow} is running the show — not fighting it, just noticing it clearly, out loud if that's what it takes.",
             "sources": [f"Gene Keys: Gate {lw_gate} ({lw_name})"],
         })
     if comm_avoid:
         shadow_list.append({
-            "text": f"Communication conditioning: {comm_avoid}. This pattern enters through open centers and ambient pressure. It can masquerade as genuine self-expression when it is actually adaptive response. Naming it is most of the work.",
+            "text": f"There's a specific pattern in how you communicate worth naming plainly: {comm_avoid}. This usually isn't a conscious choice — it tends to sneak in through whatever parts of your design are wide open, picking up pressure from whoever's in the room with you, until it can start to feel like it's genuinely yours. Once you can catch it happening in real time, most of the actual work is already done.",
             "sources": [f"Communication Profile: {comm_arch}", "Human Design: open center architecture"],
         })
 
     # Complete Synthesis paragraph
     complete_text = (
-        f"What five independent systems — each calculated from the same birth coordinates — converge on: "
-        f"a person whose place in the world involves {lp_theme}. "
-        f"Not a role chosen consciously. An encoded frequency that keeps manifesting regardless of what it is called. "
-        f"The {sun} Sun is the conscious identity becoming more fully itself with each year. "
-        f"The {hd_type} body-type means the path opens specifically through {strategy.lower()} — "
-        f"not by force, not through logic alone, specifically through that mechanism. "
-        f"Rahu in {rahu_sk} carries the soul's evolutionary vector — "
-        f"the hunger that doesn't settle until it's genuinely inhabited. "
-        f"Gate {lw_gate} ({lw_name}) and the Gift of {lw_gift} are the frequency this life was encoded to transmit. "
-        f"The {mahadasha} Mahadasha is the active karmic layer — "
-        f"the specific dimension of this design the present moment is calling forward. "
-        f"The Atmakaraka is {atmakaraka} — the planet encoding the soul's deepest lesson, "
-        f"the through-line beneath every surface theme. "
-        f"None of this was placed into five different systems by coincidence. "
-        f"It was encoded once — in a single birth moment — and five different traditions found the same signal. "
-        f"That level of convergence is not a curiosity. It is the message."
+        f"Here's what it looks like when you step back and look at the whole picture instead of any one piece of it. "
+        f"Five systems — Numerology, Western astrology, Human Design, Vedic astrology, and Gene Keys — were each calculated separately from "
+        f"the exact same birth data, and every one of them lands on some version of the same theme: {lp_theme}. "
+        f"That's not a role you sat down and picked. It's closer to a signal that keeps showing up in your life whether you're actively "
+        f"listening for it or not. "
+        f"Your {sun} Sun keeps growing more fully into itself with each year that passes, the way it's meant to. "
+        f"As a {hd_type}, the path that actually works for you opens specifically through {strategy.lower()} — not by pushing harder, "
+        f"not by out-thinking the situation, but specifically through that one mechanism, because that's how your particular design is "
+        f"built to operate. "
+        f"Your Rahu in {rahu_sk} points toward the specific hunger this lifetime is growing you into — the kind of want that doesn't fully "
+        f"settle until you've actually lived inside it for a while, not just thought about it. "
+        f"Gate {lw_gate} ({lw_name}) and its Gift of {lw_gift} are the frequency you're here to put into the world, in whatever form your "
+        f"actual life happens to take. "
+        f"You're currently moving through a {mahadasha} Mahadasha — the specific chapter your life is asking you to focus on right now — "
+        f"and underneath all of it, your Atmakaraka is {atmakaraka}, the planet carrying your soul's deepest, quietest lesson, the one "
+        f"running underneath every surface theme in this reading. "
+        f"None of this ended up in five unrelated systems by accident. It was written once, at a single moment of birth, and five completely "
+        f"different traditions — working independently, with no knowledge of each other — each found their own way to describe the same "
+        f"person. That kind of agreement isn't a curiosity to file away. It's the clearest evidence a reading like this can offer that what "
+        f"you're looking at here is actually you."
     )
     complete_sources = [
         f"Numerology: Life Path {lp} ({lp_arch}) · Expression {expr} · Soul Urge {soul}",

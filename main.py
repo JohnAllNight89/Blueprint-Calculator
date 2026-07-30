@@ -5,42 +5,19 @@ Routes:
   GET  /              → serve the frontend (templates/index.html)
   GET  /api/health    → engine health check
   POST /api/calculate → run pipeline, return frontend JSON
-  GET  /api/audit     → re-run pipeline, return full ledger as downloadable JSON
-
-All routes except GET / require HTTP Basic Auth (env: ADMIN_USER / ADMIN_PASS,
-defaults: admin / blueprint). The browser caches credentials on the first
-challenge so the frontend's subsequent XHR calls work seamlessly.
 """
 from __future__ import annotations
 
-import os
-import secrets
 from datetime import date
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 
 from blueprint_calculator.pipeline import run_pipeline
 from api_adapter import adapt
 
-_ADMIN_USER = os.environ.get("ADMIN_USER", "admin").encode()
-_ADMIN_PASS = os.environ.get("ADMIN_PASS", "blueprint").encode()
-
 app = FastAPI(title="Blueprint Calculator — Mapping the Human Condition")
-_security = HTTPBasic()
-
-
-def _require_auth(creds: HTTPBasicCredentials = Depends(_security)) -> str:
-    ok = secrets.compare_digest(creds.username.encode(), _ADMIN_USER) and \
-         secrets.compare_digest(creds.password.encode(), _ADMIN_PASS)
-    if not ok:
-        raise HTTPException(
-            status_code=401, detail="Unauthorized",
-            headers={"WWW-Authenticate": 'Basic realm="Blueprint Calculator"'},
-        )
-    return creds.username
 
 
 class CalculateRequest(BaseModel):
@@ -67,7 +44,7 @@ async def health():
 
 
 @app.post("/api/calculate")
-async def calculate(req: CalculateRequest, _: str = Depends(_require_auth)):
+async def calculate(req: CalculateRequest):
     try:
         report = run_pipeline(
             name=req.name,

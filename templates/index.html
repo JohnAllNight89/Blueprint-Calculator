@@ -1064,6 +1064,41 @@
     const BIG_FIVE_TIER_LABEL = { 1: "PRIMARY", 2: "MODULATING", 3: "DEEP / QUIET" };
     const BIG_FIVE_ORDER = ["agreeableness", "conscientiousness", "extraversion", "openness", "emotional_stability"];
 
+    const BIG_FIVE_SEVERITY_STYLE = {
+      high: "border-rose-500/40 bg-rose-500/10 text-rose-300",
+      medium: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+      low: "border-slate-500/40 bg-slate-500/10 text-slate-300",
+    };
+    const BIG_FIVE_VARIANCE_STYLE = {
+      high: "text-rose-300",
+      moderate: "text-amber-300",
+      low: "text-emerald-400",
+    };
+
+    function bigFiveTensionCard(t, { compact = false } = {}) {
+      const sevClass = BIG_FIVE_SEVERITY_STYLE[t.severity] || BIG_FIVE_SEVERITY_STYLE.low;
+      const traitLinks = (t.affected_traits || []).map((tk) =>
+        `<a href="#bigfive-trait-${tk}" class="rounded-full border border-charcoal-700/60 px-2 py-0.5 text-[9px] uppercase tracking-wider text-slate-400 hover:border-gold/50 hover:text-gold-soft transition">${(bigFiveTraitLabel(tk))}</a>`
+      ).join(" ");
+      return `
+        <div class="rounded-xl border ${sevClass} p-4${compact ? "" : ""}">
+          <p class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider">${t.name}</span>
+            <span class="rounded-full border ${sevClass} px-2 py-0.5 text-[9px] uppercase tracking-wider">${t.severity} severity</span>
+          </p>
+          <p class="mt-2 text-sm leading-relaxed text-slate-200">${t.narrative}</p>
+          ${traitLinks ? `<p class="mt-2 flex flex-wrap gap-1.5">${traitLinks}</p>` : ""}
+        </div>`;
+    }
+
+    function bigFiveTraitLabel(key) {
+      const labels = {
+        agreeableness: "Agreeableness", conscientiousness: "Conscientiousness",
+        extraversion: "Extraversion", openness: "Openness", emotional_stability: "Emotional Stability",
+      };
+      return labels[key] || key;
+    }
+
     function renderBigFive(bigFive) {
       const container = document.getElementById("bigfive-content");
       if (!bigFive || !Object.keys(bigFive).length) {
@@ -1078,9 +1113,18 @@
             This section maps values already calculated elsewhere in your Blueprint (Numerology, Human Design, Western
             Astrology) onto the Big Five personality framework. No new calculations are performed here, and no
             correlation coefficients or clinical validity are implied — it is a read-only interpretive lens on data
-            you've already generated.
+            you've already generated. Ranges are qualitative, derived from directional agreement across your data
+            points — never a fabricated numeric score.
           </p>
         </div>`;
+
+      const topTensions = bigFive.cross_system_tensions || [];
+      const tensionProfile = topTensions.length ? `
+        <div class="card-metal rounded-2xl p-6">
+          <h3 class="font-display text-lg tracking-wide text-gold-soft">Cross-System Tensions</h3>
+          <p class="mt-1 text-xs text-slate-500 leading-relaxed">Places where two or more of your systems genuinely pull in different directions — real friction, not a flaw.</p>
+          <div class="mt-4 space-y-3">${topTensions.map((t) => bigFiveTensionCard(t)).join("")}</div>
+        </div>` : "";
 
       const traitCards = BIG_FIVE_ORDER.map((key) => {
         const trait = bigFive[key];
@@ -1112,15 +1156,32 @@
             </div>`;
         }).join("");
 
+        const varianceClass = BIG_FIVE_VARIANCE_STYLE[trait.variance] || "text-slate-400";
+        const rangeBadge = trait.range_label ? `
+          <div class="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-charcoal-950/40 border border-charcoal-700/50 px-4 py-3">
+            <span class="font-display text-base gold-text">${trait.range_label}</span>
+            <span class="text-[10px] uppercase tracking-wider text-slate-500">centers on ${trait.descriptor}</span>
+            <span class="ml-auto text-[10px] uppercase tracking-wider ${varianceClass}">${trait.variance} variance</span>
+          </div>` : "";
+
+        const traitTensions = trait.tensions || [];
+        const traitTensionsHtml = traitTensions.length ? `
+          <div class="mt-4">
+            <p class="text-[10px] uppercase tracking-wider text-slate-500">Active tensions for this trait</p>
+            <div class="mt-2 space-y-2">${traitTensions.map((t) => bigFiveTensionCard(t, { compact: true })).join("")}</div>
+          </div>` : "";
+
         return `
-          <div class="card-metal rounded-2xl p-6">
+          <div id="bigfive-trait-${key}" class="card-metal rounded-2xl p-6 scroll-mt-24">
             <h3 class="font-display text-lg tracking-wide text-gold-soft">${trait.trait}</h3>
             <p class="mt-1 text-xs text-slate-500 leading-relaxed">${trait.description}</p>
+            ${rangeBadge}
             <div class="mt-4 space-y-3">${entries || `<p class="text-sm text-slate-400">No entries available.</p>`}</div>
+            ${traitTensionsHtml}
           </div>`;
       }).join("");
 
-      container.innerHTML = disclaimer + traitCards;
+      container.innerHTML = disclaimer + tensionProfile + traitCards;
     }
 
     // ---------- Celestial summary tile ----------

@@ -2348,12 +2348,15 @@ def adapt(report: BlueprintReport) -> dict:
     # ---- gene keys ----
     gk = report.gene_keys
 
-    # Build gate → sources list from HD activations
+    # Build gate → sources list from HD activations. Includes each source's own
+    # gate.line notation — a gate can be activated by multiple bodies at different
+    # lines (e.g. Saturn and Neptune both landing in the same gate), so the line
+    # isn't collapsed into a single value here the way hologenetic_profile does.
     gate_sources: dict[int, list[str]] = {}
     for body, act in hd["personality_activations"].items():
-        gate_sources.setdefault(act["gate"], []).append(f"Personality {body}")
+        gate_sources.setdefault(act["gate"], []).append(f"Personality {body} ({act['notation']})")
     for body, act in hd["design_activations"].items():
-        gate_sources.setdefault(act["gate"], []).append(f"Design {body}")
+        gate_sources.setdefault(act["gate"], []).append(f"Design {body} ({act['notation']})")
 
     activation_sequence = []
     for entry in gk["activation_sequence"]:

@@ -79,7 +79,27 @@
       .overflow-x-auto { overflow: visible !important; }
       table { min-width: 0 !important; }
       .animate-pulse { animation: none !important; }
+      /* Expanded data-point details injected by saveTabPdf() */
+      .pdf-detail-section {
+        display: block !important;
+        margin-top: 2rem; padding-top: 1rem;
+        border-top: 2px solid #b08d2a;
+      }
+      .pdf-detail-section > h3 {
+        font-family: Cinzel, serif; font-size: 13px; color: #6b5416;
+        text-transform: uppercase; letter-spacing: .2em; margin-bottom: 1rem;
+      }
+      .pdf-detail-card {
+        margin-bottom: 1.25rem; padding: .85rem 1rem;
+        border: 1px solid #c9c2da; border-radius: .5rem;
+        background: #fff; break-inside: avoid;
+      }
+      .pdf-detail-card-hdr { border-bottom: 1px solid #e0daf0; margin-bottom: .6rem; padding-bottom: .4rem; }
+      .pdf-detail-card-hdr p { font-size: 9px; text-transform: uppercase; letter-spacing: .2em; color: #5b3fa8; }
+      .pdf-detail-card-hdr h4 { font-family: Cinzel, serif; font-size: 13px; color: #8a6d1d; margin-top: .15rem; }
+      .pdf-detail-body { font-size: 10px; }
     }
+    .pdf-detail-section { display: none; }
     [data-did] { cursor: pointer; }
     tr[data-did]:hover > td { background: rgba(139,92,246,0.07) !important; }
     [data-did].rounded-xl:hover, [data-did].rounded-2xl:hover { opacity:.93; }
@@ -353,11 +373,37 @@
     });
 
     // ---------- Scoped per-tab Save/PDF ----------
-    // Prints only the named panel instead of the full report. Summary's own Save/PDF
-    // button intentionally does NOT use this — it stays a whole-report export.
+    // Prints only the named panel AND a full expanded-details section covering every data point
+    // in that tab. Summary's own Save/PDF button intentionally does NOT use this.
     function saveTabPdf(panelId) {
       const panel = document.getElementById(panelId);
       if (!panel) return;
+
+      // Inject a print-only section with full detail content for every [data-did] in this tab
+      const seen = new Set();
+      let cardsHtml = "";
+      panel.querySelectorAll("[data-did]").forEach(el => {
+        const id = parseInt(el.dataset.did);
+        if (seen.has(id) || !_DR[id]) return;
+        seen.add(id);
+        const obj = _DR[id];
+        cardsHtml += `
+          <div class="pdf-detail-card">
+            <div class="pdf-detail-card-hdr">
+              <p>${obj._subtitle || ""}</p>
+              <h4>${obj._title || ""}</h4>
+            </div>
+            <div class="pdf-detail-body">${buildDataDetailHtml(obj)}</div>
+          </div>`;
+      });
+      if (cardsHtml) {
+        const dump = document.createElement("div");
+        dump.id = "_pdf_detail_dump";
+        dump.className = "pdf-detail-section";
+        dump.innerHTML = `<h3>Expanded Data Point Details</h3>${cardsHtml}`;
+        panel.appendChild(dump);
+      }
+
       document.body.classList.add("print-scope");
       panel.classList.add("print-target");
       window.print();
@@ -365,6 +411,8 @@
     window.addEventListener("afterprint", () => {
       document.body.classList.remove("print-scope");
       document.querySelectorAll(".print-target").forEach((p) => p.classList.remove("print-target"));
+      const dump = document.getElementById("_pdf_detail_dump");
+      if (dump) dump.remove();
     });
 
     // ---------- Rendering helpers ----------

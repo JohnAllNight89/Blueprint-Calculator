@@ -386,6 +386,315 @@ LOOKUP_TABLES = {
 }
 
 
+# ── DIRECTIONAL CLASSIFICATION ────────────────────────────────────────────
+# Categorical labels (never a number) attached to the values already keyed in
+# LOOKUP_TABLES above, used only to compute the qualitative range/variance
+# below and to check cross-system tension patterns. Never rendered as prose
+# directly — the existing "technical"/"plain" text is the only user-facing
+# copy. Not every one of the ~180 values above needs a direction; only the
+# Tier 1/2 values that materially affect the range calculation are covered
+# here, plus a handful of clearly-fitting Tier 3 booleans.
+
+DIRECTIONS = {
+    "agreeableness_hd_type": {
+        "Projector": "accommodating", "Generator": "responsive",
+        "Manifesting Generator": "responsive", "Manifestor": "independent",
+        "Reflector": "variable",
+    },
+    # Also used for Soul Urge — same table LOOKUP_TABLES reuses for both fields.
+    "agreeableness_expression": {
+        "1": "independent", "2": "harmony-seeking", "3": "moderate", "4": "moderate",
+        "5": "independent", "6": "harmony-seeking", "7": "detached", "8": "independent",
+        "9": "harmony-seeking", "11": "detached", "22": "structured", "33": "harmony-seeking",
+    },
+    "agreeableness_venus": {
+        "Aries": "independent", "Taurus": "moderate", "Gemini": "moderate",
+        "Cancer": "harmony-seeking", "Leo": "moderate", "Virgo": "moderate",
+        "Libra": "harmony-seeking", "Scorpio": "detached", "Sagittarius": "moderate",
+        "Capricorn": "independent", "Aquarius": "detached", "Pisces": "harmony-seeking",
+    },
+    "agreeableness_profile": {
+        "1/3": "independent", "1/4": "independent", "2/4": "harmony-seeking",
+        "2/5": "moderate", "3/5": "independent", "3/6": "moderate",
+        "4/6": "harmony-seeking", "4/1": "moderate", "5/1": "independent",
+        "5/2": "moderate", "6/2": "harmony-seeking", "6/3": "moderate",
+    },
+    "conscientiousness_life_path": {
+        "1": "structured", "2": "moderate", "3": "spontaneous", "4": "structured",
+        "5": "spontaneous", "6": "structured", "7": "moderate", "8": "structured",
+        "9": "moderate", "11": "moderate", "22": "structured", "33": "structured",
+    },
+    "conscientiousness_saturn_sign": {
+        "Aries": "pressured", "Taurus": "structured", "Gemini": "spontaneous",
+        "Cancer": "moderate", "Leo": "moderate", "Virgo": "structured",
+        "Libra": "moderate", "Scorpio": "structured", "Sagittarius": "spontaneous",
+        "Capricorn": "structured", "Aquarius": "moderate", "Pisces": "variable",
+    },
+    "extraversion_rising": {
+        "Aries": "outward", "Taurus": "inward", "Gemini": "outward", "Cancer": "inward",
+        "Leo": "outward", "Virgo": "inward", "Libra": "outward", "Scorpio": "inward",
+        "Sagittarius": "outward", "Capricorn": "inward", "Aquarius": "moderate", "Pisces": "variable",
+    },
+    "extraversion_personality": {
+        "1": "outward", "2": "inward", "3": "outward", "4": "inward", "5": "outward",
+        "6": "moderate", "7": "inward", "8": "outward", "9": "outward",
+        "11": "outward", "22": "moderate", "33": "moderate",
+    },
+    "openness_expression": {
+        "1": "moderate", "2": "moderate", "3": "open", "4": "conventional", "5": "open",
+        "6": "moderate", "7": "open", "8": "conventional", "9": "open",
+        "11": "open", "22": "conventional", "33": "moderate",
+    },
+    "openness_mercury_sign": {
+        "Aries": "moderate", "Taurus": "conventional", "Gemini": "open", "Cancer": "moderate",
+        "Leo": "moderate", "Virgo": "conventional", "Libra": "moderate", "Scorpio": "open",
+        "Sagittarius": "open", "Capricorn": "conventional", "Aquarius": "open", "Pisces": "open",
+    },
+    "emotional_stability_authority": {
+        "Splenic": "stable", "Emotional": "stable", "Sacral": "stable",
+        "Self-Projected": "moderate", "Ego": "stable", "Lunar": "variable",
+        "Mental/Environment": "reactive",
+    },
+}
+
+
+# ── CROSS-SYSTEM TENSION DETECTION ────────────────────────────────────────
+# Each pattern checks a real combination of already-extracted chart values —
+# never invents a connection that isn't actually present in the data. The
+# narrative speaks in the same second-person teaching voice as the rest of
+# this file: state the two data points in tension, then explain concretely
+# how that friction tends to show up.
+
+_ELEMENTS = {
+    "Aries": "Fire", "Leo": "Fire", "Sagittarius": "Fire",
+    "Taurus": "Earth", "Virgo": "Earth", "Capricorn": "Earth",
+    "Gemini": "Air", "Libra": "Air", "Aquarius": "Air",
+    "Cancer": "Water", "Scorpio": "Water", "Pisces": "Water",
+}
+_OPPOSITE_ELEMENTS = {("Fire", "Water"), ("Water", "Fire"), ("Earth", "Air"), ("Air", "Earth")}
+
+
+def _element_diff(sign1: str, sign2: str) -> int:
+    """0 = same/unrelated element pair, 1 = different non-opposing elements, 2 = opposing elements."""
+    e1, e2 = _ELEMENTS.get(sign1), _ELEMENTS.get(sign2)
+    if not e1 or not e2 or e1 == e2:
+        return 0
+    return 2 if (e1, e2) in _OPPOSITE_ELEMENTS else 1
+
+
+_FIRE_SIGNS = {"Aries", "Leo", "Sagittarius"}
+_WATER_SIGNS = {"Pisces", "Cancer", "Scorpio"}
+
+TENSION_PATTERNS = [
+    {
+        "id": "T-A1", "name": "Action Paradox", "severity": "high",
+        "traits": ["agreeableness", "conscientiousness"],
+        "check": lambda c: c["hd_type"] in ("Projector", "Reflector") and c["mars_sign"] in _FIRE_SIGNS,
+        "narrative": lambda c: (
+            f"Your Human Design is built to respond, not initiate — but your Mars in {c['mars_sign']} wants to "
+            f"move the second something clicks. You'll feel this as a real pull to jump in immediately, right "
+            f"alongside the deeper mechanic that actually works better when you let the invitation come to you "
+            f"first. The move that serves you long-term is rarely the move your Mars wants to make in the moment."
+        ),
+    },
+    {
+        "id": "T-A2", "name": "Initiative Paradox", "severity": "high",
+        "traits": ["agreeableness", "extraversion"],
+        "check": lambda c: c["hd_type"] == "Projector" and c["sun_sign"] in _FIRE_SIGNS,
+        "narrative": lambda c: (
+            f"Your core identity runs hot and forward — {c['sun_sign']} Sun wants to lead from the front. But as "
+            f"a Projector, your actual design rewards waiting for the invitation, not forcing the opening "
+            f"yourself. That gap can feel like sitting on your own ignition: the fire's there, but the design "
+            f"underneath it is built to be recognized, not to charge ahead uninvited."
+        ),
+    },
+    {
+        "id": "T-B1", "name": "Identity Fracture", "severity": "medium",
+        "traits": ["extraversion", "emotional_stability"],
+        "check": lambda c: _element_diff(c["rising_sign"], c["vedic_lagna"]) > 1,
+        "narrative": lambda c: (
+            f"Your Western Rising in {c['rising_sign']} and your Vedic Lagna in {c['vedic_lagna']} come from "
+            f"genuinely different elements — which means the very first impression you give off can shift "
+            f"noticeably depending on which lens someone's reading you through. Two people meeting you in "
+            f"different contexts can walk away with two believably different first reads on who you are, and "
+            f"both of them are actually true."
+        ),
+    },
+    {
+        "id": "T-C1", "name": "Timing Paradox", "severity": "high",
+        "traits": ["conscientiousness", "emotional_stability"],
+        "check": lambda c: c["authority"] == "Splenic" and c["profile"] in ("1/3", "1/4", "5/1"),
+        "narrative": lambda c: (
+            f"Your Splenic Authority speaks once, right now, and doesn't repeat itself — but your {c['profile']} "
+            f"Profile needs real time investigating and testing things before it trusts a conclusion. That's a "
+            f"genuine tension: the part of you that knows instantly, and the part of you that needs to look "
+            f"before it leaps, aren't always going to agree on when it's actually time to decide."
+        ),
+    },
+    {
+        "id": "T-C2", "name": "Patience Paradox", "severity": "medium",
+        "traits": ["emotional_stability", "conscientiousness"],
+        "check": lambda c: c["authority"] == "Emotional" and c["sun_sign"] in _FIRE_SIGNS,
+        "narrative": lambda c: (
+            f"Your Emotional Authority needs real time — days, not minutes — before a decision is actually "
+            f"reliable. But your {c['sun_sign']} Sun wants the answer right now. Expect a real internal "
+            f"push-pull here: the urgency you feel isn't wrong, it's just not yet the whole truth — the version "
+            f"of you that's still riding the wave hasn't caught up to the version that'll actually know."
+        ),
+    },
+    {
+        "id": "T-D1", "name": "Power Paradox", "severity": "high",
+        "traits": ["conscientiousness", "extraversion"],
+        "check": lambda c: "Sacral" not in c["defined_centers"] and c["life_path"] in (1, 8, 22),
+        "narrative": lambda c: (
+            f"Life Path {c['life_path']} hands you a real drive to lead and build at scale — but without a "
+            f"defined Sacral, you don't have the sustainable, self-generating motor to carry that ambition "
+            f"alone. The vision is legitimately yours; the stamina to run it solo isn't built into your design. "
+            f"This is exactly why people under this combination who try to do everything themselves tend to "
+            f"burn out — the drive was never meant to be a one-person operation."
+        ),
+    },
+    {
+        "id": "T-E1", "name": "Service Paradox", "severity": "medium",
+        "traits": ["agreeableness"],
+        "check": lambda c: c["soul_urge"] == 33 and c["profile"] == "5/1",
+        "narrative": lambda c: (
+            "Underneath, Soul Urge 33 gives you a genuine pull to serve and care for people at scale. But your "
+            "5/1 Profile casts you into the role of the outside investigator — the heretic who challenges the "
+            "very structures other people trust, not the one who blends quietly in to help. You may feel the "
+            "wanting-to-help pull, while your actual social role in a room is to be the one questioning what "
+            "everyone else has already accepted."
+        ),
+    },
+    {
+        "id": "T-F1", "name": "Visibility Paradox", "severity": "high",
+        "traits": ["extraversion", "openness"],
+        "check": lambda c: c["life_path"] == 11 and c["expression"] == 7 and c["profile"] == "5/1",
+        "narrative": lambda c: (
+            "Life Path 11 wires you to be seen and to illuminate for others — but Expression 7 wants to verify "
+            "everything privately before it speaks, and your 5/1 Profile requires waiting to be invited before "
+            "you're recognized at all. Three real, legitimate parts of you are pulling in different directions "
+            "at once: built to shine, wired to investigate quietly first, and required to wait for the door to "
+            "open. None of them is wrong; they just don't move on the same timeline."
+        ),
+    },
+    {
+        "id": "T-G1", "name": "Cognitive Paradox", "severity": "medium",
+        "traits": ["openness"],
+        "check": lambda c: "Ajna" in c["defined_centers"] and c["mercury_sign"] == "Gemini",
+        "narrative": lambda c: (
+            "A defined Ajna holds onto conclusions once you've settled on them — but Mercury in Gemini keeps "
+            "generating new angles and connections faster than most people can track. You'll notice this as a "
+            "mind that keeps producing fresh ideas even after part of you has already locked in an answer, "
+            "which can look like you arguing with your own past conclusion in real time."
+        ),
+    },
+    {
+        "id": "T-H1", "name": "Emotional Paradox", "severity": "medium",
+        "traits": ["emotional_stability"],
+        "check": lambda c: "Solar Plexus" not in c["defined_centers"] and c["moon_sign"] in _WATER_SIGNS,
+        "narrative": lambda c: (
+            f"With an open Solar Plexus, you absorb the emotional weather of whatever room you're in — but your "
+            f"{c['moon_sign']} Moon processes feeling deeply and privately, on its own internal timeline. That "
+            f"means you can be soaking up everyone else's emotional noise all day, and still end up working "
+            f"through what you actually feel completely alone, later, once everyone else has gone home."
+        ),
+    },
+]
+
+
+def _detect_tensions(ctx: dict) -> list[dict]:
+    """Check every tension pattern against already-extracted chart values (ctx).
+    Never fabricates a connection — each pattern only fires on real data already
+    computed elsewhere in the pipeline."""
+    detected = []
+    for pattern in TENSION_PATTERNS:
+        try:
+            fires = pattern["check"](ctx)
+        except (KeyError, TypeError):
+            fires = False
+        if fires:
+            detected.append({
+                "pattern_id": pattern["id"],
+                "name": pattern["name"],
+                "severity": pattern["severity"],
+                "narrative": pattern["narrative"](ctx),
+                "affected_traits": pattern["traits"],
+            })
+    return detected
+
+
+# ── QUALITATIVE RANGE / VARIANCE ──────────────────────────────────────────
+# No invented numbers anywhere here — the range is derived from directional
+# consensus among an trait's own entries and from how many/how severe the
+# cross-system tensions affecting that trait are.
+
+_OPPOSITE_DIRECTIONS = {
+    ("accommodating", "independent"), ("independent", "accommodating"),
+    ("harmony-seeking", "independent"), ("independent", "harmony-seeking"),
+    ("structured", "spontaneous"), ("spontaneous", "structured"),
+    ("outward", "inward"), ("inward", "outward"),
+    ("open", "conventional"), ("conventional", "open"),
+    ("stable", "reactive"), ("reactive", "stable"),
+}
+
+_DESCRIPTOR_MAP = {
+    "accommodating": "High", "harmony-seeking": "High", "responsive": "Moderate–High",
+    "independent": "Low", "detached": "Low–Moderate", "structured": "High",
+    "pressured": "Moderate–High", "variable": "Moderate", "spontaneous": "Low",
+    "outward": "High", "inward": "Low", "open": "High", "conventional": "Low",
+    "stable": "High", "reactive": "Low", "moderate": "Moderate",
+}
+
+_CENTER_OF_RANGE = {
+    "Low–Moderate": "Low", "Moderate–High": "High", "Low–High": "Moderate",
+    "Low": "Low", "Moderate": "Moderate", "High": "High",
+}
+
+
+def _dominant_direction(directions: list[str]) -> str | None:
+    if not directions:
+        return None
+    from collections import Counter
+    return Counter(directions).most_common(1)[0][0]
+
+
+def _qualitative_range(tier1_directions: list[str], all_directions: list[str], tension_severities: list[str]) -> tuple[str, str, str]:
+    if not all_directions:
+        return "Insufficient Data", "Unknown", "low"
+
+    unique = list(set(all_directions))
+    if len(unique) == 1:
+        consensus = "strong"
+    elif len(unique) == 2:
+        pair = (unique[0], unique[1])
+        consensus = "split" if pair in _OPPOSITE_DIRECTIONS else "moderate"
+    else:
+        consensus = "mixed"
+
+    high_sev = tension_severities.count("high")
+    med_sev = tension_severities.count("medium")
+    if high_sev >= 1 or consensus == "split":
+        variance = "high"
+    elif med_sev >= 1 or consensus == "mixed":
+        variance = "moderate"
+    else:
+        variance = "low"
+
+    dominant = _dominant_direction(tier1_directions) or _dominant_direction(all_directions)
+    base_descriptor = _DESCRIPTOR_MAP.get(dominant, "Moderate")
+
+    if variance == "high":
+        range_label = {"High": "Moderate–High", "Low": "Low–Moderate"}.get(base_descriptor, "Low–High")
+    elif variance == "moderate":
+        range_label = {"High": "Moderate–High", "Low": "Low–Moderate"}.get(base_descriptor, base_descriptor)
+    else:
+        range_label = base_descriptor
+
+    descriptor = _CENTER_OF_RANGE.get(range_label, "Moderate")
+    return range_label, descriptor, variance
+
+
 def _register_note(gate_notation: str, sphere_label: str) -> dict | None:
     """Build a Gene Keys register-modifier note (Question 4) from a gate.line notation
     string like '15.4'. Returns None if the gate can't be resolved — never fabricated."""
@@ -426,7 +735,11 @@ def record_big_five(
 
     Returns dict with 5 traits, each containing list of entries (tier, system, field,
     value, technical, plain, and an optional register_note for Gene Keys-conditioned
-    entries — see module docstring for the four-question placement test).
+    entries — see module docstring for the four-question placement test), plus a
+    qualitative range_label/descriptor/variance and a "tensions" list of any
+    cross-system contradictions affecting that trait (no invented numeric scores —
+    see DIRECTIONS / _qualitative_range / TENSION_PATTERNS above). Also returns
+    top-level "_coverage" (unchanged) and "cross_system_tensions" (top 3 overall).
     """
     gene_keys = gene_keys or {}
     vedic = vedic or {}
@@ -462,8 +775,15 @@ def record_big_five(
     lifes_work_notation = gene_keys.get("lifes_work", "")
     purpose_notation = gene_keys.get("purpose", "")
 
+    # Extracted for cross-system tension detection only (Question 1 timing
+    # exclusion doesn't apply — these are natal placements, not timing data).
+    mars_sign = western_placements.get("Mars", {}).get("sign_name", "")
+    sun_sign = western.get("sun_sign", "")
+    moon_sign = western.get("moon_sign", "")
+    vedic_lagna = vedic.get("lagna", "")
+
     # Helper to add entry
-    def add_entry(trait_entries, tier, system, field, value, tech=None, plain=None, register_note=None):
+    def add_entry(trait_entries, tier, system, field, value, tech=None, plain=None, register_note=None, direction=None):
         entry = {
             "tier": tier,
             "system": system,
@@ -474,6 +794,8 @@ def record_big_five(
         }
         if register_note is not None:
             entry["register_note"] = register_note
+        if direction is not None:
+            entry["direction"] = direction
         trait_entries.append(entry)
 
     # ── AGREEABLENESS ────────────────────────────────────────────
@@ -483,31 +805,36 @@ def record_big_five(
     if hd_type in LOOKUP_TABLES["agreeableness_hd_type"]:
         entry = LOOKUP_TABLES["agreeableness_hd_type"][hd_type]
         add_entry(agreeableness_entries, 1, "human_design", "type", hd_type,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["agreeableness_hd_type"].get(hd_type))
 
     # Tier 1: Expression
     if str(expression) in LOOKUP_TABLES["agreeableness_expression"]:
         entry = LOOKUP_TABLES["agreeableness_expression"][str(expression)]
         add_entry(agreeableness_entries, 1, "numerology", "expression", expression,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["agreeableness_expression"].get(str(expression)))
 
     # Tier 2: Venus Sign
     if venus_sign and venus_sign in LOOKUP_TABLES["agreeableness_venus"]:
         entry = LOOKUP_TABLES["agreeableness_venus"][venus_sign]
         add_entry(agreeableness_entries, 2, "western_astrology", "venus_sign", venus_sign,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["agreeableness_venus"].get(venus_sign))
 
     # Tier 2: HD Profile (conditions HD Type's Tier 1 default, same category as a placement)
     if profile and profile in LOOKUP_TABLES["agreeableness_profile"]:
         entry = LOOKUP_TABLES["agreeableness_profile"][profile]
         add_entry(agreeableness_entries, 2, "human_design", "profile", profile,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["agreeableness_profile"].get(profile))
 
     # Tier 3: Soul Urge
     if str(soul_urge) in LOOKUP_TABLES["agreeableness_expression"]:
         entry = LOOKUP_TABLES["agreeableness_expression"][str(soul_urge)]
         add_entry(agreeableness_entries, 3, "numerology", "soul_urge", soul_urge,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["agreeableness_expression"].get(str(soul_urge)))
 
     # ── CONSCIENTIOUSNESS ────────────────────────────────────────
     conscientiousness_entries = []
@@ -519,12 +846,14 @@ def record_big_five(
         add_entry(conscientiousness_entries, 1, "human_design", "defined_centers",
                  "Sacral or Root",
                  tech="Defined Sacral or Root centers give sustainable, repeatable energy.",
-                 plain="You have real, dependable energy to draw on for getting things done. It's there for you consistently, not just on the days you happen to feel motivated.")
+                 plain="You have real, dependable energy to draw on for getting things done. It's there for you consistently, not just on the days you happen to feel motivated.",
+                 direction="structured")
     else:
         add_entry(conscientiousness_entries, 1, "human_design", "defined_centers",
                  "neither",
                  tech="Open Sacral and Root means energy is inconsistent.",
-                 plain="Your energy for follow-through isn't automatic — some days it's genuinely there, and some days you have to work harder to find it, and that's not a discipline problem, it's how this part of your design actually runs.")
+                 plain="Your energy for follow-through isn't automatic — some days it's genuinely there, and some days you have to work harder to find it, and that's not a discipline problem, it's how this part of your design actually runs.",
+                 direction="variable")
 
     # Tier 1: Life Path (Life's Work Gate shadow/gift attaches here as a register
     # modifier — same core "output/what I'm here to do" theme, not a standalone entry)
@@ -532,7 +861,8 @@ def record_big_five(
         entry = LOOKUP_TABLES["conscientiousness_life_path"][str(life_path)]
         register_note = _register_note(lifes_work_notation, "Life's Work")
         add_entry(conscientiousness_entries, 1, "numerology", "life_path", life_path,
-                 tech=entry["technical"], plain=entry["plain"], register_note=register_note)
+                 tech=entry["technical"], plain=entry["plain"], register_note=register_note,
+                 direction=DIRECTIONS["conscientiousness_life_path"].get(str(life_path)))
 
     # Tier 2: Saturn Sign
     if saturn_sign and saturn_sign in LOOKUP_TABLES["conscientiousness_saturn_sign"]:
@@ -543,7 +873,8 @@ def record_big_five(
             tech = "Saturn in its own sign, carrying strong dignity; retrograde suggests discipline was internalized through early hardship rather than external teaching."
             plain = "Your sense of discipline was shaped early, likely through real hard experience rather than someone gently teaching it to you. You built this one the hard way, which is exactly why it's so hard to shake."
         add_entry(conscientiousness_entries, 2, "western_astrology", "saturn_sign", saturn_sign,
-                 tech=tech, plain=plain)
+                 tech=tech, plain=plain,
+                 direction=DIRECTIONS["conscientiousness_saturn_sign"].get(saturn_sign))
 
     # Tier 3: Karmic Lesson (only fires if actually missing from the name — background,
     # invisible until activated by circumstance, matches the Soul Urge/Moon/Maturity bucket)
@@ -561,7 +892,8 @@ def record_big_five(
     if rising_sign and rising_sign in LOOKUP_TABLES["extraversion_rising"]:
         entry = LOOKUP_TABLES["extraversion_rising"][rising_sign]
         add_entry(extraversion_entries, 1, "western_astrology", "rising_sign", rising_sign,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["extraversion_rising"].get(rising_sign))
 
     # Tier 2: Personality number — conditions/cross-checks the Rising sign's first-contact
     # default; this is a corrected fix — previously this entry was mislabeled "personality"
@@ -570,7 +902,8 @@ def record_big_five(
     if str(personality_num) in LOOKUP_TABLES["extraversion_personality"]:
         entry = LOOKUP_TABLES["extraversion_personality"][str(personality_num)]
         add_entry(extraversion_entries, 2, "numerology", "personality", personality_num,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["extraversion_personality"].get(str(personality_num)))
 
     # ── OPENNESS ─────────────────────────────────────────────────
     openness_entries = []
@@ -583,24 +916,26 @@ def record_big_five(
         add_entry(openness_entries, 1, "human_design", "defined_centers", "Ajna",
                  tech="Defined Ajna holds fixed conclusions more readily.",
                  plain="Once you land on a conclusion, you tend to hold onto it firmly — think of how rarely you actually change your mind once you've genuinely settled on a view.",
-                 register_note=purpose_register)
+                 register_note=purpose_register, direction="conventional")
     else:
         add_entry(openness_entries, 1, "human_design", "open_centers", "Ajna",
                  tech="Open Ajna tends toward more fluid thinking.",
                  plain="You tend to stay flexible in how you think, genuinely open to new information changing your mind — a fixed opinion doesn't sit as comfortably with you as it does for other people.",
-                 register_note=purpose_register)
+                 register_note=purpose_register, direction="open")
 
     # Tier 1: Expression (novelty orientation)
     if str(expression) in LOOKUP_TABLES["openness_expression"]:
         entry = LOOKUP_TABLES["openness_expression"][str(expression)]
         add_entry(openness_entries, 1, "numerology", "expression", expression,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["openness_expression"].get(str(expression)))
 
     # Tier 2: Mercury Sign
     if mercury_sign and mercury_sign in LOOKUP_TABLES["openness_mercury_sign"]:
         entry = LOOKUP_TABLES["openness_mercury_sign"][mercury_sign]
         add_entry(openness_entries, 2, "western_astrology", "mercury_sign", mercury_sign,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["openness_mercury_sign"].get(mercury_sign))
 
     # Tier 3: Attitude (surface-level approach to new situations — background until activated)
     if str(attitude) in LOOKUP_TABLES["openness_attitude"]:
@@ -615,17 +950,20 @@ def record_big_five(
     if "Solar Plexus" in defined_centers:
         add_entry(emotional_entries, 1, "human_design", "defined_centers", "Solar Plexus",
                  tech="Defined Solar Plexus has consistent internal emotional wave.",
-                 plain="You have real emotional ups and downs, but those feelings are genuinely yours — not borrowed from whoever's standing next to you.")
+                 plain="You have real emotional ups and downs, but those feelings are genuinely yours — not borrowed from whoever's standing next to you.",
+                 direction="stable")
     else:
         add_entry(emotional_entries, 1, "human_design", "open_centers", "Solar Plexus",
                  tech="Open Solar Plexus means no fixed internal emotional truth.",
-                 plain="You tend to pick up and absorb whatever emotional energy is nearby — walk into a tense room and you can feel the tension shift in you, even if nothing's actually happened to you personally.")
+                 plain="You tend to pick up and absorb whatever emotional energy is nearby — walk into a tense room and you can feel the tension shift in you, even if nothing's actually happened to you personally.",
+                 direction="reactive")
 
     # Tier 1: Authority
     if authority in LOOKUP_TABLES["emotional_stability_authority"]:
         entry = LOOKUP_TABLES["emotional_stability_authority"][authority]
         add_entry(emotional_entries, 1, "human_design", "authority", authority,
-                 tech=entry["technical"], plain=entry["plain"])
+                 tech=entry["technical"], plain=entry["plain"],
+                 direction=DIRECTIONS["emotional_stability_authority"].get(authority))
 
     # Tier 2: Saturn retrograde — fixed extraction bug: was always reading False because
     # placements[...]["retrograde"] never exists; correct source is dominant_retrogrades.
@@ -635,17 +973,20 @@ def record_big_five(
                   else "Saturn direct suggests more conventional development of discipline.",
              plain="Your emotional resilience was likely built early, through real hard experience, rather than "
                    "someone teaching it to you gently." if saturn_retrograde
-                   else "Your resilience likely developed in a more straightforward, conventionally supported way, without the same early hardship.")
+                   else "Your resilience likely developed in a more straightforward, conventionally supported way, without the same early hardship.",
+             direction="stable" if saturn_retrograde else "moderate")
 
     # Tier 2: Heart (defined vs open)
     if "Heart" in defined_centers:
         add_entry(emotional_entries, 2, "human_design", "defined_centers", "Heart",
                  tech="Defined Heart gives consistent internal sense of worth.",
-                 plain="You have a steady internal sense of your own worth — it doesn't swing wildly based on how someone treated you today.")
+                 plain="You have a steady internal sense of your own worth — it doesn't swing wildly based on how someone treated you today.",
+                 direction="stable")
     else:
         add_entry(emotional_entries, 2, "human_design", "open_centers", "Heart",
                  tech="Open Heart means worth referenced externally.",
-                 plain="Your sense of your own worth can shift depending on how people around you are treating you — a good conversation can genuinely lift it, and a cold one can genuinely dent it, more than it would for most people.")
+                 plain="Your sense of your own worth can shift depending on how people around you are treating you — a good conversation can genuinely lift it, and a cold one can genuinely dent it, more than it would for most people.",
+                 direction="reactive")
 
     # Tier 3: Vedic Moon Nakshatra (background emotional temperament)
     if moon_nakshatra and moon_nakshatra in LOOKUP_TABLES["emotional_stability_moon_nakshatra"]:
@@ -687,6 +1028,40 @@ def record_big_five(
         },
     }
 
+    # Cross-system tension detection — checks real already-extracted values, never
+    # fabricates a connection. Narratives are written in the same second-person
+    # teaching voice as every "plain" field above.
+    tension_ctx = {
+        "hd_type": hd_type, "authority": authority, "profile": profile,
+        "defined_centers": defined_centers, "life_path": life_path,
+        "soul_urge": soul_urge, "expression": expression,
+        "mars_sign": mars_sign, "sun_sign": sun_sign, "moon_sign": moon_sign,
+        "mercury_sign": mercury_sign, "rising_sign": rising_sign, "vedic_lagna": vedic_lagna,
+    }
+    all_tensions = _detect_tensions(tension_ctx)
+
+    # Qualitative range/variance per trait — no invented numbers. Derived from
+    # directional consensus among that trait's own entries plus the severity of
+    # any cross-system tensions affecting it.
+    for trait_key, trait_data in traits.items():
+        trait_entries = trait_data["entries"]
+        tier1_dirs = [e["direction"] for e in trait_entries if e.get("tier") == 1 and e.get("direction")]
+        all_dirs = [e["direction"] for e in trait_entries if e.get("direction")]
+        trait_tensions = [t for t in all_tensions if trait_key in t["affected_traits"]]
+        tension_severities = [t["severity"] for t in trait_tensions]
+
+        range_label, descriptor, variance = _qualitative_range(tier1_dirs, all_dirs, tension_severities)
+        trait_data["range_label"] = range_label
+        trait_data["descriptor"] = descriptor
+        trait_data["variance"] = variance
+        trait_data["tensions"] = trait_tensions
+
+    # Top 3 tensions overall, ranked by severity (high before medium before low).
+    _SEVERITY_RANK = {"high": 3, "medium": 2, "low": 1}
+    cross_system_tensions = sorted(all_tensions, key=lambda t: _SEVERITY_RANK.get(t["severity"], 0), reverse=True)[:3]
+    for i, t in enumerate(cross_system_tensions, start=1):
+        t["rank"] = i
+
     # Coverage check (structural recommendation): count fired entries per trait against
     # the number of rules this module defines for that trait, so a silently-broken
     # extraction (wrong key, case mismatch, null field) surfaces immediately instead of
@@ -709,5 +1084,6 @@ def record_big_five(
             "under_covered": fired < expected,
         }
     traits["_coverage"] = coverage
+    traits["cross_system_tensions"] = cross_system_tensions
 
     return traits

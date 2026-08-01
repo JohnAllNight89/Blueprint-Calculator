@@ -51,6 +51,10 @@
       header, aside, #tab-bar, #print-btn, #form-error { display: none !important; }
       main { display: block !important; max-width: 100% !important; padding: 0 !important; }
       [data-panel] { display: block !important; margin-top: 1rem !important; break-inside: avoid-page; }
+      /* Scoped single-tab print: saveTabPdf() adds print-scope to body and print-target to
+         the one panel being saved, so only that panel prints instead of the full report. */
+      body.print-scope [data-panel] { display: none !important; }
+      body.print-scope [data-panel].print-target { display: block !important; }
       .print-title {
         display: block; font-family: Cinzel, serif; font-size: 18px;
         margin: 1.25rem 0 0.5rem; padding-bottom: 0.25rem;
@@ -215,6 +219,13 @@
       <!-- Numerology -->
       <div id="panel-numerology" data-panel class="mt-6 hidden space-y-6">
         <h2 class="print-title">Numerology</h2>
+        <div class="flex items-center justify-between gap-3 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Numerology</h2>
+          <button onclick="saveTabPdf('panel-numerology')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="numerology-cards">
           <p class="text-sm text-slate-400">Calculate a blueprint to reveal the core numbers.</p>
         </div>
@@ -223,6 +234,13 @@
       <!-- Western Astrology -->
       <div id="panel-western" data-panel class="mt-6 hidden">
         <h2 class="print-title">Western Astrology (Tropical)</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Western Astrology (Tropical)</h2>
+          <button onclick="saveTabPdf('panel-western')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="western-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
@@ -231,6 +249,13 @@
       <!-- Vedic Astrology -->
       <div id="panel-vedic" data-panel class="mt-6 hidden">
         <h2 class="print-title">Vedic Astrology (Sidereal · Lahiri)</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Vedic Astrology (Sidereal · Lahiri)</h2>
+          <button onclick="saveTabPdf('panel-vedic')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="vedic-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
@@ -239,6 +264,13 @@
       <!-- Human Design -->
       <div id="panel-humandesign" data-panel class="mt-6 hidden">
         <h2 class="print-title">Human Design</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Human Design</h2>
+          <button onclick="saveTabPdf('panel-humandesign')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="hd-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
@@ -247,6 +279,13 @@
       <!-- Gene Keys (default tab) -->
       <div id="panel-genekeys" data-panel class="mt-6">
         <h2 class="print-title">Gene Keys</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Gene Keys</h2>
+          <button onclick="saveTabPdf('panel-genekeys')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="gk-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
@@ -255,6 +294,13 @@
       <!-- Communication Profile -->
       <div id="panel-communication" data-panel class="mt-6 hidden">
         <h2 class="print-title">Communication Profile</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Communication Profile</h2>
+          <button onclick="saveTabPdf('panel-communication')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="communication-content" class="space-y-6">
           <p class="text-sm text-slate-400">Add birth time and place, then calculate.</p>
         </div>
@@ -263,6 +309,13 @@
       <!-- Big Five Traits -->
       <div id="panel-bigfive" data-panel class="mt-6 hidden">
         <h2 class="print-title">Big Five Traits</h2>
+        <div class="flex items-center justify-between gap-3 mb-4 print:hidden">
+          <h2 class="font-display text-lg tracking-wide gold-text">Big Five Traits</h2>
+          <button onclick="saveTabPdf('panel-bigfive')"
+                  class="shrink-0 rounded-lg border border-gold/40 px-3 py-1.5 text-xs tracking-wider text-gold-soft transition hover:bg-gold/10">
+            ⎙ Save / PDF
+          </button>
+        </div>
         <div id="bigfive-content" class="space-y-6">
           <p class="text-sm text-slate-400">Calculate a blueprint to reveal the Big Five mapping.</p>
         </div>
@@ -297,6 +350,21 @@
         if (btn.dataset.tab === "all") updateAllAspectsPanel();
         document.getElementById("panel-" + btn.dataset.tab).classList.remove("hidden");
       });
+    });
+
+    // ---------- Scoped per-tab Save/PDF ----------
+    // Prints only the named panel instead of the full report. Summary's own Save/PDF
+    // button intentionally does NOT use this — it stays a whole-report export.
+    function saveTabPdf(panelId) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      document.body.classList.add("print-scope");
+      panel.classList.add("print-target");
+      window.print();
+    }
+    window.addEventListener("afterprint", () => {
+      document.body.classList.remove("print-scope");
+      document.querySelectorAll(".print-target").forEach((p) => p.classList.remove("print-target"));
     });
 
     // ---------- Rendering helpers ----------

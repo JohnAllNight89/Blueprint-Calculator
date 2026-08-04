@@ -1200,6 +1200,11 @@
         svg += `<polygon ${dAttr} points="${points}" fill="${fill}" fill-opacity="${defined ? 0.85 : 1}" stroke="${defined ? HD_CENTER_COLORS[center] : '#5a5468'}" stroke-width="1.5" class="cursor-pointer"/>`;
       });
 
+      const gateActivation = {};
+      [...(hd.personality.activations || []), ...(hd.design.activations || [])].forEach((a) => {
+        if (!(a.gate in gateActivation)) gateActivation[a.gate] = a;
+      });
+
       Object.entries(HD_CENTER_GATES).forEach(([center, gates]) => {
         const defined = definedCenters.has(center);
         gates.forEach((g) => {
@@ -1209,7 +1214,9 @@
             ? (HD_CENTER_TEXT_DARK.has(center) ? "#1a1626" : "#f5ead0")
             : (active ? "#e8dfc8" : "#5a5468");
           const weight = active ? 700 : 400;
-          svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="${weight}" fill="${textColor}">${g}</text>`;
+          const a = gateActivation[g];
+          const da = a ? _da({type:"hd_gate",glyph:a.glyph,body:a.body,notation:a.notation,gate_name:a.gate_name,zodiac:a.zodiac,_title:`Gate ${a.notation} · ${a.gate_name}`,_subtitle:"Human Design Bodygraph"}) : "";
+          svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="${weight}" fill="${textColor}"${a ? ` ${da} class="cursor-pointer"` : ""}>${g}</text>`;
         });
       });
 
@@ -1306,75 +1313,76 @@
     }
 
     // ---------- Gene Keys ----------
-    // Inner diamond: the 4 Activation Sequence spheres. Life's Work (top) and Evolution (left)
-    // come from the Personality/conscious Sun+Earth; Radiance (right) and Purpose (bottom) come
-    // from the Design/unconscious Sun+Earth. Outer ring: the 6-sphere Venus Sequence
-    // (relationship patterns) plus Pearl (prosperity) -- colored the same Personality/Design
-    // way as the inner diamond. The ring line between outer nodes is a visual grouping only,
-    // not a claimed inter-sphere pathway (this app doesn't have a verified source for that).
-    const GK_CENTER = { x: 250, y: 250 };
-    const GK_INNER_RADIUS = 120, GK_INNER_NODE_R = 40;
-    const GK_OUTER_RADIUS = 205, GK_OUTER_NODE_R = 32;
-    const GK_INNER_ORDER = ["Life's Work", "Radiance", "Purpose", "Evolution"];
-    const GK_INNER_PAIRS = [
-      ["Life's Work", "Evolution"], // same source (Personality)
-      ["Radiance", "Purpose"],      // same source (Design)
-      ["Life's Work", "Purpose"],   // cross pathway
-      ["Evolution", "Radiance"],    // cross pathway
+    // The 11-sphere Hologenetic Profile ("Golden Path") as a fixed hourglass tree, positions and
+    // edges read directly off the user's own genekeys.com profile screenshot (colored, labeled
+    // pathways), cross-checked against genekeys.com's structural icon and "Golden Path Sphere
+    // Descriptions" PDF. Node coloring stays this app's own gold=Personality/violet=Design
+    // convention (consistent with every other tab) rather than copying genekeys.com's 3-color
+    // scheme. Edge labels are the named pathways genekeys.com itself uses.
+    const GK_POS = {
+      "Life's Work": { x: 350, y: 60 },
+      "Pearl":       { x: 350, y: 200 },
+      "Core":        { x: 230, y: 320 },
+      "Culture":     { x: 470, y: 320 },
+      "Radiance":    { x: 80,  y: 430 },
+      "SQ":          { x: 350, y: 430 },
+      "Evolution":   { x: 620, y: 430 },
+      "IQ":          { x: 230, y: 540 },
+      "EQ":          { x: 470, y: 540 },
+      "Attraction":  { x: 350, y: 650 },
+      "Purpose":     { x: 350, y: 780 },
+    };
+    // "Vocation (Core)" is displayed as "Core" on the diagram (its Pearl Sequence name, matching
+    // genekeys.com's own diagram) even though the sphere/card data is keyed "Vocation (Core)".
+    const GK_NODE_LABEL = { "Vocation (Core)": "Core" };
+    const GK_NODE_KEY = { "Core": "Vocation (Core)" };
+    const GK_BIG_NODES = new Set(["Life's Work", "Radiance", "Evolution", "Purpose"]);
+    const GK_EDGES = [
+      // Pearl Sequence "Prosperity" cluster
+      ["Life's Work", "Core", "Service"], ["Life's Work", "Pearl", "Quantum"],
+      ["Pearl", "Core", "Quantum"], ["Pearl", "Culture", "Quantum"], ["Core", "Culture", "Initiative"],
+      // Activation Sequence "Genius" pathway
+      ["Life's Work", "Evolution", "Challenge"], ["Radiance", "Evolution", "Breakthrough", 0.28],
+      ["Radiance", "Purpose", "Core Stability", 0.22],
+      // Venus Sequence "Love" pathway
+      ["Core", "SQ", "Realization"], ["SQ", "EQ", "Love"], ["IQ", "EQ", "Intelligence"],
+      ["IQ", "Attraction", "Karma"], ["Attraction", "Purpose", "Dharma"],
     ];
-    const GK_OUTER_ORDER = ["Attraction", "IQ", "EQ", "SQ", "Vocation", "Culture", "Pearl"];
-
-    function _gkPolar(angleDeg, radius) {
-      const rad = angleDeg * Math.PI / 180;
-      return { x: GK_CENTER.x + radius * Math.cos(rad), y: GK_CENTER.y + radius * Math.sin(rad) };
-    }
 
     function buildGeneKeysDiagram(gk) {
       const bySphere = {};
       [...gk.activation_sequence, ...(gk.venus_sequence || []), ...(gk.pearl_sequence || [])]
-        .forEach((s) => { bySphere[s.sphere] = s; });
+        .forEach((s) => { bySphere[GK_NODE_LABEL[s.sphere] || s.sphere] = s; });
 
-      const innerPos = {};
-      GK_INNER_ORDER.forEach((name, i) => { innerPos[name] = _gkPolar(-90 + i * 90, GK_INNER_RADIUS); });
-      const outerPos = {};
-      GK_OUTER_ORDER.forEach((name, i) => {
-        outerPos[name] = _gkPolar(-90 + i * (360 / GK_OUTER_ORDER.length), GK_OUTER_RADIUS);
+      let lines = "", labels = "";
+
+      GK_EDGES.forEach(([a, b, label, t]) => {
+        const pa = GK_POS[a], pb = GK_POS[b];
+        lines += `<line x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke="#5a5468" stroke-width="1.5" opacity="0.6"/>`;
+        const frac = t ?? 0.5;
+        const mx = pa.x + (pb.x - pa.x) * frac, my = pa.y + (pb.y - pa.y) * frac;
+        labels += `<text x="${mx}" y="${my}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#c9c4d6" font-style="italic" paint-order="stroke" stroke="#15121f" stroke-width="3">${label}</text>`;
       });
 
-      let svg = "";
-
-      GK_INNER_PAIRS.forEach(([a, b], i) => {
-        const pa = innerPos[a], pb = innerPos[b];
-        const sameSource = i < 2;
-        const sourceA = (bySphere[a]?.source || "").startsWith("Personality");
-        const stroke = sameSource ? (sourceA ? "#8a7328" : "#5b3fa8") : "#5a5468";
-        const dash = sameSource ? "" : ` stroke-dasharray="4,4"`;
-        svg += `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}" x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}" stroke="${stroke}" stroke-width="1.5" opacity="0.7"${dash}/>`;
-      });
-
-      GK_OUTER_ORDER.forEach((name, i) => {
-        const next = GK_OUTER_ORDER[(i + 1) % GK_OUTER_ORDER.length];
-        const pa = outerPos[name], pb = outerPos[next];
-        svg += `<line x1="${pa.x.toFixed(1)}" y1="${pa.y.toFixed(1)}" x2="${pb.x.toFixed(1)}" y2="${pb.y.toFixed(1)}" stroke="#3a3448" stroke-width="1" stroke-dasharray="2,3" opacity="0.6"/>`;
-      });
-
-      const drawNode = (pos, sphereName, radius, notationSize, labelSize) => {
-        const s = bySphere[sphereName];
+      const drawNode = (name, pos) => {
+        const s = bySphere[name];
         if (!s) return "";
+        const radius = GK_BIG_NODES.has(name) ? 44 : 36;
         const isPersonality = (s.source || "").startsWith("Personality");
         const fill = isPersonality ? "#8a7328" : "#5b3fa8";
         const stroke = isPersonality ? "#e9cd6f" : "#a78bfa";
-        return `<g>
-          <circle cx="${pos.x.toFixed(1)}" cy="${pos.y.toFixed(1)}" r="${radius}" fill="${fill}" fill-opacity="0.85" stroke="${stroke}" stroke-width="2"/>
-          <text x="${pos.x.toFixed(1)}" y="${(pos.y - radius * 0.15).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${notationSize}" font-weight="700" fill="#f5ead0">${s.notation}</text>
-          <text x="${pos.x.toFixed(1)}" y="${(pos.y + radius * 0.4).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${labelSize}" letter-spacing="0.3" fill="#f5ead0">${sphereName}</text>
+        const gk_key = GK_NODE_KEY[name] || name;
+        return `<g ${_da({type:"gene_key", gene_key:s.gene_key, name:s.name, shadow:s.shadow, gift:s.gift, siddhi:s.siddhi, sources:s.sources, _title:`Gene Key ${s.gene_key} · ${s.name}`, _subtitle:`${name} · Gene Keys Hologenetic Profile`})} class="cursor-pointer">
+          <circle cx="${pos.x}" cy="${pos.y}" r="${radius}" fill="${fill}" fill-opacity="0.85" stroke="${stroke}" stroke-width="2"/>
+          <text x="${pos.x}" y="${(pos.y - radius * 0.15).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${GK_BIG_NODES.has(name) ? 20 : 17}" font-weight="700" fill="#f5ead0">${s.notation}</text>
+          <text x="${pos.x}" y="${(pos.y + radius * 0.42).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${GK_BIG_NODES.has(name) ? 11 : 10}" letter-spacing="0.3" fill="#f5ead0">${name}</text>
         </g>`;
       };
 
-      GK_INNER_ORDER.forEach((name) => { svg += drawNode(innerPos[name], name, GK_INNER_NODE_R, 19, 10); });
-      GK_OUTER_ORDER.forEach((name) => { svg += drawNode(outerPos[name], name, GK_OUTER_NODE_R, 14, 8); });
+      let nodes = "";
+      Object.keys(GK_POS).forEach((name) => { nodes += drawNode(name, GK_POS[name]); });
 
-      return `<svg viewBox="0 0 500 500" class="mx-auto w-full max-w-[460px]">${svg}</svg>`;
+      return `<svg viewBox="0 0 700 830" class="mx-auto w-full max-w-[620px]">${lines}${nodes}${labels}</svg>`;
     }
 
     function renderGeneKeys(astro) {
@@ -1388,8 +1396,9 @@
       const gk = astro.gene_keys;
       const sphereCard = (sphere) => {
         const hk = GK_HEADLINE[sphere.sphere] || null;
+        const da = hk ? "" : _da({type:"gene_key", gene_key:sphere.gene_key, name:sphere.name, shadow:sphere.shadow, gift:sphere.gift, siddhi:sphere.siddhi, sources:sphere.sources, _title:`Gene Key ${sphere.gene_key} · ${sphere.name}`, _subtitle:`${sphere.sphere} · Gene Keys Hologenetic Profile`});
         return `
-        <div class="card-metal-gold rounded-2xl p-6${hk ? ' cursor-pointer hover:border-gold/60 transition' : ''}"${hk ? ` data-headline="${hk}" title="Click to learn what ${sphere.sphere} means for you"` : ''}>
+        <div class="card-metal-gold rounded-2xl p-6 cursor-pointer hover:border-gold/60 transition"${hk ? ` data-headline="${hk}" title="Click to learn what ${sphere.sphere} means for you"` : ` ${da} title="Click for full Gene Key detail"`}>
           <div class="flex items-baseline justify-between gap-3">
             <p class="text-[11px] uppercase tracking-[0.25em] text-violet2-soft">${sphere.sphere}</p>
             <span class="text-[11px] text-slate-500">${sphere.source}</span>
@@ -1499,7 +1508,7 @@
         ? [
             _obvious.length ? `<p class="mb-2 text-[10px] uppercase tracking-[0.25em] text-emerald-400">Core Strengths · Observable From Data</p>` : "",
             ..._obvious.map(s => `
-              <li class="flex items-start gap-3 rounded-xl bg-charcoal-950/50 px-4 py-3 border border-emerald-700/20">
+              <li ${_da({type:"comm_strength",strength:s.strength,source:s.source,_title:s.strength,_subtitle:"Core Strength"})} class="flex items-start gap-3 rounded-xl bg-charcoal-950/50 px-4 py-3 border border-emerald-700/20 cursor-pointer hover:border-gold/50 transition">
                 <span class="mt-0.5 text-gold-soft shrink-0">✦</span>
                 <div>
                   <p class="font-medium text-slate-100">${s.strength}</p>
@@ -1508,7 +1517,7 @@
               </li>`),
             _nonObvious.length ? `<p class="mt-4 mb-2 text-[10px] uppercase tracking-[0.25em] text-gold-soft">Hidden Pattern · Cross-System — Not Obvious Without the Full Picture</p>` : "",
             ..._nonObvious.map(s => `
-              <li class="flex items-start gap-3 rounded-xl bg-gold/5 border border-gold/30 px-4 py-3">
+              <li ${_da({type:"comm_strength",strength:s.strength,source:s.source,_title:s.strength,_subtitle:"Hidden Pattern"})} class="flex items-start gap-3 rounded-xl bg-gold/5 border border-gold/30 px-4 py-3 cursor-pointer hover:border-gold/50 transition">
                 <span class="mt-0.5 text-gold-soft shrink-0">⬡</span>
                 <div>
                   <p class="font-medium text-slate-100">${s.strength}</p>
@@ -2230,6 +2239,11 @@
         // Store personalized headline descriptions for clickable chips
         _headlineDescriptions = (data.synthesis && data.synthesis.headline_descriptions) || {};
         _lastData = data;
+
+        // Reset the click-to-detail registry so re-running calculate() doesn't leak the
+        // previous run's entries forever.
+        _DR = {};
+        _drId = 0;
 
         renderNumerology(data.numerology);
         renderWestern(data.astrology);

@@ -114,7 +114,7 @@ def record_gene_keys(ledger: Ledger, hd: dict) -> dict:
 
     venus_sequence = [
         {"sphere": "Attraction", **attraction}, {"sphere": "IQ", **iq}, {"sphere": "EQ", **eq},
-        {"sphere": "SQ", **sq}, {"sphere": "Vocation", **vocation}, {"sphere": "Culture", **culture},
+        {"sphere": "SQ", **sq}, {"sphere": "Vocation (Core)", **vocation}, {"sphere": "Culture", **culture},
     ]
     pearl_sequence = [{"sphere": "Pearl", **pearl}]
     ledger.record(
@@ -122,7 +122,7 @@ def record_gene_keys(ledger: Ledger, hd: dict) -> dict:
         value=[s["sphere"] + ": " + s["notation"] for s in venus_sequence], source=["HD-1", "HD-4"],
         calculation=(
             "Attraction=Design Moon, IQ=Personality Venus, EQ=Personality Mars, "
-            "SQ=Design Venus, Vocation=Design Mars, Culture=Design Jupiter"
+            "SQ=Design Venus, Vocation (Core)=Design Mars, Culture=Design Jupiter"
         ),
     )
     ledger.record(

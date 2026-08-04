@@ -193,7 +193,7 @@ SPHERE_SOURCE: dict[str, str] = {
     "IQ": "Personality Venus",
     "EQ": "Personality Mars",
     "SQ": "Design Venus",
-    "Vocation": "Design Mars",
+    "Vocation (Core)": "Design Mars",
     "Culture": "Design Jupiter",
     "Pearl": "Personality Jupiter",
 }
@@ -207,7 +207,7 @@ SPHERE_MEANING: dict[str, str] = {
     "IQ": "How you think — your mental signature in love and partnership.",
     "EQ": "How you feel — your emotional signature in love and partnership.",
     "SQ": "The deeper archetype you're growing toward within relationship.",
-    "Vocation": "The underlying skill or role that grounds your work in the world.",
+    "Vocation (Core)": "The underlying skill or role that grounds your work in the world.",
     "Culture": "The people and environments that amplify your gifts.",
     "Pearl": "Where your gifts convert into lasting prosperity — your destiny point.",
 }
@@ -2389,11 +2389,13 @@ def adapt(report: BlueprintReport) -> dict:
                 "sphere": sphere,
                 "source": SPHERE_SOURCE.get(sphere, sphere),
                 "notation": entry["notation"],
+                "gene_key": gate,
                 "name": gk_info[0],
                 "meaning": SPHERE_MEANING.get(sphere, ""),
                 "shadow": gk_info[1],
                 "gift": gk_info[2],
                 "siddhi": gk_info[3],
+                "sources": gate_sources.get(gate, []),
             })
         return out
 

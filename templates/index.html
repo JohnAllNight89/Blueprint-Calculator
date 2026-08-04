@@ -592,7 +592,146 @@
       5:"Change", 6:"Responsibility", 7:"Inner wisdom", 8:"Power & harvest",
       9:"Completion", 11:"Heightened intuition", 22:"Master building", 33:"Service",
     };
+
+    // Quick-reference table content, verified against the actual implemented formulas in
+    // blueprint_calculator/numerology.py (not generic textbook numerology, which can differ --
+    // e.g. Generation Number here does not preserve master numbers, unlike Life Path).
+    const NUM_CALC = {
+      life_path: "Sum every digit of the birth date, reduce (11/22/33 preserved)",
+      expression: "Sum the numeric value of every letter in the birth name, reduce",
+      soul_urge: "Sum the numeric value of the vowels only, reduce",
+      personality: "Sum the numeric value of the consonants only, reduce",
+      attitude: "Sum the digits of birth month + birth day, reduce",
+      birthday: "Sum the digits of the birth day, reduce",
+      generation: "Sum the digits of the birth year, reduce (no master numbers)",
+      maturity: "Expression + Life Path, reduced",
+      balance: "Sum the first-letter value of each name word, reduced",
+      subconscious_self: "9 − count of Karmic Lesson numbers",
+      personal_year: "Birth month + birth day + current year, reduced",
+      personal_month: "Personal Year + current month, reduced",
+      personal_day: "Personal Month + current day, reduced",
+      karmic_debt: "13, 14, 16, or 19 appearing in an intermediate (pre-reduction) sum",
+      karmic_lesson: "Digits 1–9 that never appear as a letter value in the birth name",
+    };
+    const NUM_DEF_EXTRA = {
+      subconscious_self: "Automatic response under pressure — how instinctively you handle the unexpected.",
+      personal_year: "The energetic theme of the current calendar year for you.",
+      personal_month: "The energetic theme of the current month.",
+      personal_day: "The energetic theme of today.",
+      pinnacle: "A peak opportunity available during this life phase.",
+      challenge: "A friction point to work through during this life phase.",
+      period: "One of your three broad governing numbers, restated as a life period.",
+      karmic_debt: "A number flagging unfinished business carried into this life.",
+      karmic_lesson: "A number missing from your name, marking a quality to build deliberately.",
+    };
+    // Pinnacle/Challenge formulas are per-index, not per-type -- each of the 4 uses a
+    // different combination of Attitude/Generation/Life Path (see numerology.py:149-180).
+    const PINNACLE_CALC = [
+      "Attitude + Generation, reduced", "Attitude + Life Path, reduced",
+      "Pinnacle 1 + Pinnacle 2, reduced", "Generation + Life Path, reduced",
+    ];
+    const CHALLENGE_CALC = [
+      "|Attitude − Generation|", "|Attitude − Life Path|",
+      "|Challenge 1 − Challenge 2|", "|Generation − Life Path| — the Main Challenge",
+    ];
+    // period_cycles() (numerology.py:185) is literally [attitude, generation, life_path] --
+    // Periods restate those three numbers under a different heading, not an independent
+    // age-staged cycle the way Pinnacles/Challenges are, so there's no age range to show here.
+    const PERIOD_CALC = ["= Attitude Number", "= Generation Number", "= Life Path Number"];
     function renderNumerology(d) {
+      // ---- Quick-Reference Table: every numerology data point, one row each ----
+      // Reuses the exact same _da() payload shapes already built below in this function, so
+      // clicking a table row opens the identical detail modal as the equivalent card/badge.
+      const ageRangesQR = d.cycle_age_ranges || [];
+      const ageLabelQR = (i) => {
+        const r = ageRangesQR[i];
+        if (!r) return "";
+        const [start, end] = r;
+        return end === null || end === undefined ? `Age ${start}+` : `Age ${start}–${end}`;
+      };
+      const rrow = (label, calc, number, resultDetail, definition, translation, daPayload) => `
+        <tr class="odd:bg-charcoal-950/30" ${_da(daPayload)}>
+          ${td(`<span class="font-medium text-slate-100 cursor-pointer">${label}</span>`)}
+          ${td(`<span class="text-slate-400">${calc}</span>`)}
+          ${td(`<span class="font-mono text-base ${[11,22,33].includes(number) ? "gold-text font-semibold" : "text-gold-soft"}">${number ?? "—"}</span>${resultDetail ? `<br><span class="text-[10px] text-slate-500">${resultDetail}</span>` : ""}`)}
+          ${td(`<span class="text-slate-300">${definition}</span>`)}
+          ${td(`<span class="text-slate-400">${translation}</span>`)}
+        </tr>`;
+
+      // Clean, scannable row labels for this table -- distinct from the poetic phrase
+      // (NUM_SUBTITLES[key].split("—")[0]) the existing cards below use as their heading.
+      // The _da() payload keeps that same poetic label/_title so the modal opened from a
+      // table row is byte-for-byte identical to the modal opened from the card itself.
+      const NUM_SHORT_LABEL = {life_path:"Life Path", expression:"Expression", soul_urge:"Soul Urge", personality:"Personality"};
+
+      const refRows = [];
+
+      ["life_path","expression","soul_urge","personality"].forEach((key) => {
+        const r = d[key];
+        const cardLabel = NUM_SUBTITLES[key].split("—")[0].trim();
+        refRows.push(rrow(NUM_SHORT_LABEL[key], NUM_CALC[key], r.number, r.reduction, NUM_SUBTITLES[key],
+          (NUM_MEANINGS[r.number] || {}).keywords || "",
+          {type:"numerology_core", field:key, label:cardLabel, field_definition:NUM_SUBTITLES[key], number:r.number, reduction:r.reduction, _title:cardLabel, _subtitle:`Number ${r.number}`}));
+      });
+
+      [["attitude","Attitude"],["birthday","Birthday"],["generation","Generation"]].forEach(([key, label]) => {
+        const r = d[key];
+        refRows.push(rrow(label, NUM_CALC[key], r.number, r.reduction, NUM_SUBTITLES[key],
+          (NUM_MEANINGS[r.number] || {}).keywords || "",
+          {type:"numerology_extra", label:`${label} Number`, number:r.number, note:NUM_SUBTITLES[key], _title:label, _subtitle:`Number ${r.number}`}));
+      });
+
+      [["maturity","Maturity"],["balance","Balance"]].forEach(([key, label]) => {
+        const r = d[key];
+        refRows.push(rrow(label, NUM_CALC[key], r.number, r.reduction, NUM_SUBTITLES[key],
+          (NUM_MEANINGS[r.number] || {}).keywords || "",
+          {type:"numerology_extra", label:`${label} Number`, number:r.number, note:NUM_SUBTITLES[key], _title:label, _subtitle:`Number ${r.number}`}));
+      });
+      refRows.push(rrow("Subconscious Self", NUM_CALC.subconscious_self, d.subconscious_self, "", NUM_DEF_EXTRA.subconscious_self,
+        (NUM_MEANINGS[d.subconscious_self] || {}).keywords || "",
+        {type:"numerology_extra", label:"Subconscious Self", number:d.subconscious_self, note:"9 − missing numbers", _title:"Subconscious Self", _subtitle:"Automatic response under pressure"}));
+
+      [["personal_year","Personal Year"],["personal_month","Personal Month"],["personal_day","Personal Day"]].forEach(([key, label]) => {
+        refRows.push(rrow(label, NUM_CALC[key], d[key], "", NUM_DEF_EXTRA[key],
+          (NUM_MEANINGS[d[key]] || {}).keywords || "",
+          {type:"numerology_extra", label, number:d[key], note:PY_THEMES[d[key]]||"", _title:label, _subtitle:"Active timing"}));
+      });
+
+      (d.pinnacles || []).forEach((n, i) => {
+        refRows.push(rrow(`Pinnacle ${i + 1}`, PINNACLE_CALC[i], n, ageLabelQR(i), NUM_DEF_EXTRA.pinnacle,
+          (PINNACLE_MEANINGS[n] || {}).plain || "",
+          {type:"numerology_pinnacle", index:i+1, number:n, age_range:ageLabelQR(i), _title:`Pinnacle ${i+1}`, _subtitle:ageLabelQR(i)||"Life cycle phase"}));
+      });
+      (d.challenges || []).forEach((n, i) => {
+        refRows.push(rrow(`Challenge ${i + 1}`, CHALLENGE_CALC[i], n, ageLabelQR(i), NUM_DEF_EXTRA.challenge,
+          (CHALLENGE_MEANINGS[n] || {}).plain || "",
+          {type:"numerology_challenge", index:i+1, number:n, age_range:ageLabelQR(i), _title:`Challenge ${i+1}`, _subtitle:ageLabelQR(i)||"Life cycle phase"}));
+      });
+      (d.periods || []).forEach((n, i) => {
+        refRows.push(rrow(`Period ${i + 1}`, PERIOD_CALC[i], n, "", NUM_DEF_EXTRA.period,
+          (NUM_MEANINGS[n] || {}).keywords || "",
+          {type:"numerology_extra", label:`Period ${i+1}`, number:n, note:"Period cycle", _title:`Period ${i+1}`, _subtitle:"Life cycle number"}));
+      });
+
+      const karmicDebtRows = (d.karmic_debts && d.karmic_debts.length)
+        ? d.karmic_debts.map((v) => rrow("Karmic Debt", NUM_CALC.karmic_debt, v, "", NUM_DEF_EXTRA.karmic_debt,
+            (KARMIC_DEBT_MEANINGS[v] || {}).plain || "",
+            {type:"karmic_debt", value:v, _title:`Karmic Debt ${v}`, _subtitle:"Karmic Debt Numbers"}))
+        : [`<tr class="odd:bg-charcoal-950/30">${td('<span class="font-medium text-slate-100">Karmic Debt</span>')}${td(`<span class="text-slate-400">${NUM_CALC.karmic_debt}</span>`)}${td('<span class="text-slate-500">None</span>')}${td(`<span class="text-slate-300">${NUM_DEF_EXTRA.karmic_debt}</span>`)}${td('<span class="text-slate-500">—</span>')}</tr>`];
+      const karmicLessonRows = (d.karmic_lessons && d.karmic_lessons.length)
+        ? d.karmic_lessons.map((v) => rrow("Karmic Lesson", NUM_CALC.karmic_lesson, v, "", NUM_DEF_EXTRA.karmic_lesson,
+            (KARMIC_LESSON_MEANINGS[v] || {}).plain || "",
+            {type:"karmic_lesson", value:v, _title:`Karmic Lesson ${v}`, _subtitle:"Karmic Lesson Numbers"}))
+        : [`<tr class="odd:bg-charcoal-950/30">${td('<span class="font-medium text-slate-100">Karmic Lesson</span>')}${td(`<span class="text-slate-400">${NUM_CALC.karmic_lesson}</span>`)}${td('<span class="text-slate-500">None</span>')}${td(`<span class="text-slate-300">${NUM_DEF_EXTRA.karmic_lesson}</span>`)}${td('<span class="text-slate-500">—</span>')}</tr>`];
+      refRows.push(...karmicDebtRows, ...karmicLessonRows);
+
+      const quickRefTable = tableShell(
+        "Quick Reference — All Numerology Data",
+        "Every number this profile computes, how it's calculated, and what it means",
+        th("Label") + th("Calculation") + th("Result") + th("Definition") + th("Human Translation & Explanation"),
+        refRows.join(""),
+      );
+
       const coreKeys = ["life_path","expression","soul_urge","personality"];
       const coreCards = coreKeys.map(key => {
         const r = d[key]; const arch = ARCHETYPES[r.number] || "";
@@ -728,6 +867,7 @@
         </div>`;
 
       document.getElementById("numerology-cards").innerHTML =
+        quickRefTable +
         pillarsSection + birthSection + derivedSection + karmicSection + timingSection + cyclesSection +
         renderStandouts(d.standouts) +
         sectionSummary(d.section_summary);

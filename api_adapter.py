@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from blueprint_calculator.ephemeris import bridge_tropical_to_sign
 from blueprint_calculator.constants.hd_wheel import GATE_TO_CENTER, LINE_NAMES
+from blueprint_calculator.constants.vedic_tables import RASHI_NAMES
 from blueprint_calculator.gene_keys import programming_partner
 from blueprint_calculator.pipeline import BlueprintReport
 
@@ -2251,6 +2252,7 @@ def adapt(report: BlueprintReport) -> dict:
             "glyph": BODY_GLYPHS.get(body, "?"),
             "rashi": rashi_sk,
             "sign": rashi_en,
+            "rashi_index": RASHI_NAMES.index(rashi_combined),
             "position": position,
             "nakshatra": nak.get("nakshatra_name", ""),
             "nakshatra_lord": nak.get("lord", ""),
@@ -2275,6 +2277,7 @@ def adapt(report: BlueprintReport) -> dict:
         "lagna": {
             "rashi": lagna_sk,
             "sign": lagna_en,
+            "rashi_index": RASHI_NAMES.index(lagna_combined),
             "position": f"{ld_int}°{lm_int:02d}'{ls:02d}\"",
             "nakshatra": report.vedic.get("moon_nakshatra", ""),
             "pada": lagna_nak.get("pada", ""),

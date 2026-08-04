@@ -1065,6 +1065,157 @@
     // ---------- Human Design ----------
     const HD_CENTER_ORDER = ["Head", "Ajna", "Throat", "G", "Heart", "Sacral", "Spleen", "Solar Plexus", "Root"];
 
+    // ---------- Human Design Bodygraph ----------
+    const HD_CENTER_GATES = {
+      "Head": [61, 63, 64],
+      "Ajna": [4, 11, 17, 24, 43, 47],
+      "Throat": [8, 12, 16, 20, 23, 31, 33, 35, 45, 56, 62],
+      "G": [1, 2, 7, 10, 13, 15, 25, 46],
+      "Heart": [21, 26, 40, 51],
+      "Sacral": [3, 5, 9, 14, 27, 29, 34, 42, 59],
+      "Solar Plexus": [6, 22, 30, 36, 37, 49, 55],
+      "Spleen": [18, 28, 32, 44, 48, 50, 57],
+      "Root": [19, 38, 39, 41, 52, 53, 54, 58, 60],
+    };
+
+    const HD_CHANNELS = [
+      [1, 8], [2, 14], [3, 60], [4, 63], [5, 15], [6, 59], [7, 31], [9, 52],
+      [10, 20], [10, 34], [10, 57], [11, 56], [12, 22], [13, 33], [16, 48],
+      [17, 62], [18, 58], [19, 49], [20, 34], [20, 57], [21, 45], [23, 43],
+      [24, 61], [25, 51], [26, 44], [27, 50], [28, 38], [29, 46], [30, 41],
+      [32, 54], [34, 57], [35, 36], [37, 40], [39, 55], [42, 53], [47, 64],
+    ];
+
+    const HD_CENTER_BOXES = {
+      "Head": { x0: 215, y0: 20, x1: 285, y1: 85, shape: "triangle-up" },
+      "Ajna": { x0: 205, y0: 95, x1: 295, y1: 160, shape: "triangle-down" },
+      "Throat": { x0: 185, y0: 170, x1: 315, y1: 260, shape: "square" },
+      "G": { x0: 195, y0: 270, x1: 305, y1: 365, shape: "diamond" },
+      "Heart": { x0: 320, y0: 300, x1: 390, y1: 350, shape: "triangle-left" },
+      "Sacral": { x0: 195, y0: 375, x1: 305, y1: 460, shape: "square" },
+      "Spleen": { x0: 70, y0: 470, x1: 180, y1: 560, shape: "triangle-right" },
+      "Solar Plexus": { x0: 320, y0: 470, x1: 430, y1: 560, shape: "triangle-left" },
+      "Root": { x0: 185, y0: 570, x1: 315, y1: 650, shape: "square" },
+    };
+
+    const HD_CENTER_COLORS = {
+      "Head": "#fbbf24", "Ajna": "#4ade80", "Throat": "#a16207", "G": "#facc15",
+      "Heart": "#b91c1c", "Sacral": "#dc2626", "Solar Plexus": "#c2703d",
+      "Spleen": "#92400e", "Root": "#78350f",
+    };
+    const HD_CENTER_TEXT_DARK = new Set(["Head", "Ajna", "G"]);
+
+    function _hdShapePoints(box) {
+      const { x0, y0, x1, y1, shape } = box;
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      switch (shape) {
+        case "triangle-up": return [[cx, y0], [x1, y1], [x0, y1]];
+        case "triangle-down": return [[x0, y0], [x1, y0], [cx, y1]];
+        case "triangle-left": return [[x1, y0], [x1, y1], [x0, cy]];
+        case "triangle-right": return [[x0, y0], [x0, y1], [x1, cy]];
+        case "diamond": return [[cx, y0], [x1, cy], [cx, y1], [x0, cy]];
+        default: return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+      }
+    }
+
+    function _hdLayoutGates(box, gates) {
+      const { x0, y0, x1, y1, shape } = box;
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      const n = gates.length;
+      const positions = {};
+
+      const vertical = shape === "triangle-up" || shape === "triangle-down";
+      const horizontal = shape === "triangle-left" || shape === "triangle-right";
+
+      if (vertical || horizontal) {
+        // Triangles taper to a point, so a plain grid overflows near the apex.
+        // Lay gates out along the shape's spine instead, staying clear of the tip.
+        const apexFirst = shape === "triangle-up" || shape === "triangle-left";
+        const lo0 = vertical ? y0 : x0, hi0 = vertical ? y1 : x1;
+        const lo = apexFirst ? lo0 + (hi0 - lo0) * 0.35 : lo0 + (hi0 - lo0) * 0.08;
+        const hi = apexFirst ? hi0 - (hi0 - lo0) * 0.08 : hi0 - (hi0 - lo0) * 0.35;
+        const d = 15;
+        const placeLine = (list, offset) => {
+          const m = list.length;
+          list.forEach((g, i) => {
+            const t = m === 1 ? 0.5 : i / (m - 1);
+            const primary = lo + (hi - lo) * t;
+            positions[g] = vertical ? [cx + offset, primary] : [primary, cy + offset];
+          });
+        };
+        if (n <= 4) {
+          placeLine(gates, 0);
+        } else {
+          const half = Math.ceil(n / 2);
+          placeLine(gates.slice(0, half), -d);
+          placeLine(gates.slice(half), d);
+        }
+        return positions;
+      }
+
+      // square / diamond: rectangular grid
+      const cols = Math.ceil(Math.sqrt(n));
+      const rows = Math.ceil(n / cols);
+      const pad = shape === "square" ? 0.22 : 0.3;
+      const ix0 = x0 + (x1 - x0) * pad, ix1 = x1 - (x1 - x0) * pad;
+      const iy0 = y0 + (y1 - y0) * pad, iy1 = y1 - (y1 - y0) * pad;
+      const cellW = (ix1 - ix0) / Math.max(cols - 1, 1);
+      const cellH = (iy1 - iy0) / Math.max(rows - 1, 1);
+      gates.forEach((g, i) => {
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = cols === 1 ? (ix0 + ix1) / 2 : ix0 + cellW * col;
+        const y = rows === 1 ? (iy0 + iy1) / 2 : iy0 + cellH * row;
+        positions[g] = [x, y];
+      });
+      return positions;
+    }
+
+    function buildHumanDesignBodygraph(hd) {
+      const definedCenters = new Set(hd.defined_centers);
+      const activeGates = new Set(hd.active_gates || []);
+      const definedChannelPairs = new Set(
+        (hd.channels || []).map((c) => (c.gates || []).slice().sort((a, b) => a - b).join("-"))
+      );
+
+      const gatePositions = {};
+      Object.entries(HD_CENTER_BOXES).forEach(([center, box]) => {
+        Object.assign(gatePositions, _hdLayoutGates(box, HD_CENTER_GATES[center]));
+      });
+
+      let svg = "";
+
+      HD_CHANNELS.forEach(([g1, g2]) => {
+        const p1 = gatePositions[g1], p2 = gatePositions[g2];
+        if (!p1 || !p2) return;
+        const key = [g1, g2].sort((a, b) => a - b).join("-");
+        const defined = definedChannelPairs.has(key);
+        svg += `<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="${defined ? '#d4af37' : '#3a3448'}" stroke-width="${defined ? 2.5 : 1}" opacity="${defined ? 0.9 : 0.5}"/>`;
+      });
+
+      Object.entries(HD_CENTER_BOXES).forEach(([center, box]) => {
+        const defined = definedCenters.has(center);
+        const points = _hdShapePoints(box).map((p) => p.join(",")).join(" ");
+        const fill = defined ? HD_CENTER_COLORS[center] : "#1a1626";
+        const dAttr = _da({type:"hd_center",center,defined,_title:center+" Center",_subtitle:defined?"Defined":"Open / Undefined"});
+        svg += `<polygon ${dAttr} points="${points}" fill="${fill}" fill-opacity="${defined ? 0.85 : 1}" stroke="${defined ? HD_CENTER_COLORS[center] : '#5a5468'}" stroke-width="1.5" class="cursor-pointer"/>`;
+      });
+
+      Object.entries(HD_CENTER_GATES).forEach(([center, gates]) => {
+        const defined = definedCenters.has(center);
+        gates.forEach((g) => {
+          const [x, y] = gatePositions[g];
+          const active = activeGates.has(g);
+          const textColor = defined
+            ? (HD_CENTER_TEXT_DARK.has(center) ? "#1a1626" : "#f5ead0")
+            : (active ? "#e8dfc8" : "#5a5468");
+          const weight = active ? 700 : 400;
+          svg += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="${weight}" fill="${textColor}">${g}</text>`;
+        });
+      });
+
+      return `<svg viewBox="0 0 500 680" class="mx-auto w-full max-w-[420px]">${svg}</svg>`;
+    }
+
     function setStatus(id, active) {
       const el = document.getElementById(id);
       el.innerHTML = active ? "● Active" : "○ Awaiting birth time &amp; place";
@@ -1127,6 +1278,11 @@
       };
       container.innerHTML =
         contextBanner(astro) +
+        `<div class="card-metal rounded-2xl p-6">
+           <h3 class="font-display text-lg tracking-wide text-gold-soft">Bodygraph</h3>
+           <p class="mt-1 text-xs text-slate-400">9 centers · 36 channels · defined vs. open</p>
+           <div class="mt-4">${buildHumanDesignBodygraph(hd)}</div>
+         </div>` +
         `<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
            ${hdStat("Type", hd.type, `Strategy: ${hd.strategy}`, true, "hd_type", hd.type)}
            ${hdStat("Authority", authorityBase, hd.authority.includes("(") ? hd.authority.split(" (")[1].replace(")", "") : "inner compass", false, "hd_authority", authorityBase)}

@@ -2299,6 +2299,8 @@ def adapt(report: BlueprintReport) -> dict:
                 "glyph": BODY_GLYPHS.get(body, "?"),
                 "body": body,
                 "notation": act["notation"],
+                "gate": gate,
+                "line": act["line"],
                 "gate_name": gk_info[0],
                 "zodiac": zodiac,
             })
@@ -2308,6 +2310,7 @@ def adapt(report: BlueprintReport) -> dict:
         {
             "label": f"Gate {g1} – Gate {g2}",
             "centers": [GATE_TO_CENTER[g1], GATE_TO_CENTER[g2]],
+            "gates": [g1, g2],
         }
         for g1, g2 in hd["defined_channels"]
     ]
@@ -2339,6 +2342,7 @@ def adapt(report: BlueprintReport) -> dict:
         "not_self": hd["not_self_theme"],
         "defined_centers": hd["defined_centers"],
         "open_centers": hd["open_centers"],
+        "active_gates": hd["active_gates"],
         "channels": channels,
         "personality": {"activations": _build_activations(hd["personality_activations"])},
         "design": {

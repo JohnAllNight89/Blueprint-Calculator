@@ -1306,6 +1306,52 @@
     }
 
     // ---------- Gene Keys ----------
+    // Fixed diamond layout for the 4 Activation Sequence spheres: Life's Work (top) and
+    // Evolution (left) come from the Personality/conscious Sun+Earth; Radiance (right) and
+    // Purpose (bottom) come from the Design/unconscious Sun+Earth.
+    const GK_DIAGRAM_NODES = {
+      "Life's Work": { x: 200, y: 55 },
+      "Radiance": { x: 335, y: 175 },
+      "Purpose": { x: 200, y: 295 },
+      "Evolution": { x: 65, y: 175 },
+    };
+    const GK_DIAGRAM_PAIRS = [
+      ["Life's Work", "Evolution"], // same source (Personality)
+      ["Radiance", "Purpose"],      // same source (Design)
+      ["Life's Work", "Purpose"],   // cross pathway
+      ["Evolution", "Radiance"],    // cross pathway
+    ];
+
+    function buildGeneKeysDiagram(gk) {
+      const bySphere = {};
+      gk.activation_sequence.forEach((s) => { bySphere[s.sphere] = s; });
+
+      let svg = "";
+      GK_DIAGRAM_PAIRS.forEach(([a, b], i) => {
+        const pa = GK_DIAGRAM_NODES[a], pb = GK_DIAGRAM_NODES[b];
+        const sameSource = i < 2;
+        const sourceA = (bySphere[a]?.source || "").startsWith("Personality");
+        const stroke = sameSource ? (sourceA ? "#8a7328" : "#5b3fa8") : "#5a5468";
+        const dash = sameSource ? "" : ` stroke-dasharray="4,4"`;
+        svg += `<line x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke="${stroke}" stroke-width="1.5" opacity="0.7"${dash}/>`;
+      });
+
+      Object.entries(GK_DIAGRAM_NODES).forEach(([sphereName, pos]) => {
+        const s = bySphere[sphereName];
+        if (!s) return;
+        const isPersonality = (s.source || "").startsWith("Personality");
+        const fill = isPersonality ? "#8a7328" : "#5b3fa8";
+        const stroke = isPersonality ? "#e9cd6f" : "#a78bfa";
+        svg += `<g>
+          <circle cx="${pos.x}" cy="${pos.y}" r="46" fill="${fill}" fill-opacity="0.85" stroke="${stroke}" stroke-width="2"/>
+          <text x="${pos.x}" y="${pos.y - 6}" text-anchor="middle" dominant-baseline="central" font-size="19" font-weight="700" fill="#f5ead0">${s.notation}</text>
+          <text x="${pos.x}" y="${pos.y + 16}" text-anchor="middle" dominant-baseline="central" font-size="10" letter-spacing="0.5" fill="#f5ead0">${sphereName}</text>
+        </g>`;
+      });
+
+      return `<svg viewBox="0 0 400 350" class="mx-auto w-full max-w-[380px]">${svg}</svg>`;
+    }
+
     function renderGeneKeys(astro) {
       const container = document.getElementById("gk-content");
       if (!astro.available) {
@@ -1348,6 +1394,11 @@
 
       container.innerHTML =
         contextBanner(astro) +
+        `<div class="card-metal rounded-2xl p-6">
+           <h3 class="font-display text-lg tracking-wide text-gold-soft">Activation Sequence Map</h3>
+           <p class="mt-1 text-xs text-slate-400">Gold = Personality (conscious) · Violet = Design (unconscious)</p>
+           <div class="mt-4">${buildGeneKeysDiagram(gk)}</div>
+         </div>` +
         `<div>
            <h3 class="mb-4 font-display text-lg tracking-wide text-gold-soft">Activation Sequence</h3>
            <div class="grid gap-4 xl:grid-cols-2">${spheres}</div>

@@ -183,12 +183,19 @@ PROFILE_LABELS: dict[str, str] = {
     "6/2": "Role Model / Hermit", "6/3": "Role Model / Martyr",
 }
 
-# Activation Sequence sphere → source label
+# Activation Sequence + Venus Sequence + Pearl sphere → source label
 SPHERE_SOURCE: dict[str, str] = {
     "Life's Work": "Personality Sun",
     "Evolution": "Personality Earth",
     "Radiance": "Design Sun",
     "Purpose": "Design Earth",
+    "Attraction": "Design Moon",
+    "IQ": "Personality Venus",
+    "EQ": "Personality Mars",
+    "SQ": "Design Venus",
+    "Vocation": "Design Mars",
+    "Culture": "Design Jupiter",
+    "Pearl": "Personality Jupiter",
 }
 
 SPHERE_MEANING: dict[str, str] = {
@@ -196,6 +203,13 @@ SPHERE_MEANING: dict[str, str] = {
     "Evolution": "What life is teaching you — your inner growth.",
     "Radiance": "What keeps you healthy and vital — your presence.",
     "Purpose": "What grounds you — your deepest inner purpose.",
+    "Attraction": "What draws you into relationship — your core relational pattern.",
+    "IQ": "How you think — your mental signature in love and partnership.",
+    "EQ": "How you feel — your emotional signature in love and partnership.",
+    "SQ": "The deeper archetype you're growing toward within relationship.",
+    "Vocation": "The underlying skill or role that grounds your work in the world.",
+    "Culture": "The people and environments that amplify your gifts.",
+    "Pearl": "Where your gifts convert into lasting prosperity — your destiny point.",
 }
 
 # Preferred display order for Vedic grahas
@@ -2365,21 +2379,27 @@ def adapt(report: BlueprintReport) -> dict:
     for body, act in hd["design_activations"].items():
         gate_sources.setdefault(act["gate"], []).append(f"Design {body} ({act['notation']})")
 
-    activation_sequence = []
-    for entry in gk["activation_sequence"]:
-        sphere = entry["sphere"]
-        gate = entry["gate"]
-        gk_info = GENE_KEYS.get(gate, ("Unknown", "Unknown", "Unknown", "Unknown"))
-        activation_sequence.append({
-            "sphere": sphere,
-            "source": SPHERE_SOURCE.get(sphere, sphere),
-            "notation": entry["notation"],
-            "name": gk_info[0],
-            "meaning": SPHERE_MEANING.get(sphere, ""),
-            "shadow": gk_info[1],
-            "gift": gk_info[2],
-            "siddhi": gk_info[3],
-        })
+    def _build_sphere_entries(entries: list[dict]) -> list[dict]:
+        out = []
+        for entry in entries:
+            sphere = entry["sphere"]
+            gate = entry["gate"]
+            gk_info = GENE_KEYS.get(gate, ("Unknown", "Unknown", "Unknown", "Unknown"))
+            out.append({
+                "sphere": sphere,
+                "source": SPHERE_SOURCE.get(sphere, sphere),
+                "notation": entry["notation"],
+                "name": gk_info[0],
+                "meaning": SPHERE_MEANING.get(sphere, ""),
+                "shadow": gk_info[1],
+                "gift": gk_info[2],
+                "siddhi": gk_info[3],
+            })
+        return out
+
+    activation_sequence = _build_sphere_entries(gk["activation_sequence"])
+    venus_sequence = _build_sphere_entries(gk.get("venus_sequence", []))
+    pearl_sequence = _build_sphere_entries(gk.get("pearl_sequence", []))
 
     all_keys = []
     for gate_num, key_data in sorted(gk["hologenetic_profile"].items()):
@@ -2395,6 +2415,8 @@ def adapt(report: BlueprintReport) -> dict:
 
     gene_keys = {
         "activation_sequence": activation_sequence,
+        "venus_sequence": venus_sequence,
+        "pearl_sequence": pearl_sequence,
         "all_keys": all_keys,
     }
 

@@ -6,10 +6,19 @@ zero new mathematics. Every Gene Key is isomorphic to its Human Design
 gate (gate N -> key N, line N -> line N); this module only reselects
 and relabels activations already computed in Phase 7.
 
-GK-2 (Frequency Bands text), GK-10 (Prime Gifts, HEURISTIC), and
-GK-11..14 (Venus/Pearl Sequences, Codon Rings, Pathway Connections) are
-left INVENTORY -- they require either a full 64-key text database or
+GK-2 (Frequency Bands text) and GK-10 (Prime Gifts, HEURISTIC) are left
+INVENTORY -- they require either a full 64-key text database or
 interpretive judgment the outline explicitly defers to a Synthesis layer.
+
+GK-11 (Venus Sequence) and GK-12 (Pearl Sequence) are implemented below,
+reusing activations already computed in Phase 7 for bodies the Human
+Design bodygraph needed anyway (Venus, Mars, Jupiter, Moon). The
+planet-to-sphere mapping follows Gene Keys' own published correlation
+(https://genekeys.com/docs/what-planets-does-each-sphere-of-the-golden-path-profile-correlate-to/),
+cross-checked against that source directly rather than assumed. GK-13
+(Codon Ring Membership) and GK-14 (Pathway Connections) remain
+INVENTORY -- unrelated biological/contemplative lookup tables, not
+planetary correlations, and still not embedded in the outline.
 """
 from __future__ import annotations
 
@@ -93,6 +102,35 @@ def record_gene_keys(ledger: Ledger, hd: dict) -> dict:
         calculation="[Life's Work, Evolution, Radiance, Purpose]",
     )
 
+    # Venus Sequence (6 spheres) + Pearl (1 sphere) -- planet-to-sphere mapping per
+    # Gene Keys' own published correlation table (see module docstring for source).
+    attraction = hd["design_activations"]["Moon"]
+    iq = hd["personality_activations"]["Venus"]
+    eq = hd["personality_activations"]["Mars"]
+    sq = hd["design_activations"]["Venus"]
+    vocation = hd["design_activations"]["Mars"]
+    culture = hd["design_activations"]["Jupiter"]
+    pearl = hd["personality_activations"]["Jupiter"]
+
+    venus_sequence = [
+        {"sphere": "Attraction", **attraction}, {"sphere": "IQ", **iq}, {"sphere": "EQ", **eq},
+        {"sphere": "SQ", **sq}, {"sphere": "Vocation", **vocation}, {"sphere": "Culture", **culture},
+    ]
+    pearl_sequence = [{"sphere": "Pearl", **pearl}]
+    ledger.record(
+        "GK-11", system="Gene Keys", phase="Phase 8, Step 26b", label="Venus Sequence",
+        value=[s["sphere"] + ": " + s["notation"] for s in venus_sequence], source=["HD-1", "HD-4"],
+        calculation=(
+            "Attraction=Design Moon, IQ=Personality Venus, EQ=Personality Mars, "
+            "SQ=Design Venus, Vocation=Design Mars, Culture=Design Jupiter"
+        ),
+    )
+    ledger.record(
+        "GK-12", system="Gene Keys", phase="Phase 8, Step 26b", label="Pearl Sequence",
+        value=[s["sphere"] + ": " + s["notation"] for s in pearl_sequence], source=["HD-1"],
+        calculation="Pearl=Personality Jupiter",
+    )
+
     profile64 = build_hologenetic_profile(total_gates, personality_gates, design_gates)
     ledger.record(
         "GK-9", system="Gene Keys", phase="Phase 8, Step 26", label="Full 64-Key Hologenetic Profile",
@@ -105,7 +143,6 @@ def record_gene_keys(ledger: Ledger, hd: dict) -> dict:
         calculation="Requires interpretive assessment of 'highest frequency' keys; deferred to Synthesis layer per the outline.",
     )
     for id_, label in [
-        ("GK-11", "Venus Sequence"), ("GK-12", "Pearl Sequence"),
         ("GK-13", "Codon Ring Membership"), ("GK-14", "Pathway Connections"),
     ]:
         ledger.record(
@@ -117,6 +154,10 @@ def record_gene_keys(ledger: Ledger, hd: dict) -> dict:
     return {
         "lifes_work": lifes_work["notation"], "evolution": evolution["notation"],
         "radiance": radiance["notation"], "purpose": purpose["notation"],
+        "attraction": attraction["notation"], "iq": iq["notation"], "eq": eq["notation"],
+        "sq": sq["notation"], "vocation": vocation["notation"], "culture": culture["notation"],
+        "pearl": pearl["notation"],
         "programming_partners": partners, "activation_sequence": sequence,
+        "venus_sequence": venus_sequence, "pearl_sequence": pearl_sequence,
         "hologenetic_profile": {k: v for k, v in profile64.items() if v["activated"]},
     }
